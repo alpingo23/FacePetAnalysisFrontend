@@ -1,0 +1,607 @@
+{
+  "n02085620-Chihuahua": {
+    "energy": 90,
+    "temperament": "playful",
+    "style": "feminine"
+  },
+  "n02085782-Japanese_spaniel": {
+    "energy": 40,
+    "temperament": "calm",
+    "style": "feminine"
+  },
+  "n02085936-Maltese_dog": {
+    "energy": 60,
+    "temperament": "gentle",
+    "style": "feminine"
+  },
+  "n02086079-Pekinese": {
+    "energy": 50,
+    "temperament": "relaxed",
+    "style": "feminine"
+  },
+  "n02086240-Shih-Tzu": {
+    "energy": 40,
+    "temperament": "calm",
+    "style": "feminine"
+  },
+  "n02086646-Blenheim_spaniel": {
+    "energy": 55,
+    "temperament": "friendly",
+    "style": "feminine"
+  },
+  "n02086910-papillon": {
+    "energy": 80,
+    "temperament": "energetic",
+    "style": "neutral"
+  },
+  "n02087046-toy_terrier": {
+    "energy": 85,
+    "temperament": "playful",
+    "style": "neutral"
+  },
+  "n02087394-Rhodesian_ridgeback": {
+    "energy": 85,
+    "temperament": "active",
+    "style": "masculine"
+  },
+  "n02088094-Afghan_hound": {
+    "energy": 70,
+    "temperament": "elegant",
+    "style": "feminine"
+  },
+  "n02088238-basset": {
+    "energy": 30,
+    "temperament": "calm",
+    "style": "neutral"
+  },
+  "n02088364-beagle": {
+    "energy": 75,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02088466-bloodhound": {
+    "energy": 60,
+    "temperament": "serious",
+    "style": "masculine"
+  },
+  "n02088632-bluetick": {
+    "energy": 65,
+    "temperament": "alert",
+    "style": "masculine"
+  },
+  "n02089078-black-and-tan_coonhound": {
+    "energy": 70,
+    "temperament": "adventurous",
+    "style": "masculine"
+  },
+  "n02089867-Walker_hound": {
+    "energy": 72,
+    "temperament": "independent",
+    "style": "masculine"
+  },
+  "n02089973-English_foxhound": {
+    "energy": 75,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02090379-redbone": {
+    "energy": 78,
+    "temperament": "active",
+    "style": "masculine"
+  },
+  "n02090622-borzoi": {
+    "energy": 50,
+    "temperament": "elegant",
+    "style": "neutral"
+  },
+  "n02090721-Irish_wolfhound": {
+    "energy": 60,
+    "temperament": "calm",
+    "style": "masculine"
+  },
+  "n02091032-Italian_greyhound": {
+    "energy": 55,
+    "temperament": "playful",
+    "style": "feminine"
+  },
+  "n02091134-whippet": {
+    "energy": 65,
+    "temperament": "gentle",
+    "style": "neutral"
+  },
+  "n02091244-Ibizan_hound": {
+    "energy": 70,
+    "temperament": "alert",
+    "style": "neutral"
+  },
+  "n02091467-Norwegian_elkhound": {
+    "energy": 75,
+    "temperament": "protective",
+    "style": "masculine"
+  },
+  "n02091635-otterhound": {
+    "energy": 65,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02091831-Saluki": {
+    "energy": 60,
+    "temperament": "elegant",
+    "style": "neutral"
+  },
+  "n02092002-Scottish_deerhound": {
+    "energy": 50,
+    "temperament": "calm",
+    "style": "masculine"
+  },
+  "n02092339-Weimaraner": {
+    "energy": 80,
+    "temperament": "energetic",
+    "style": "neutral"
+  },
+  "n02093256-Staffordshire_bullterrier": {
+    "energy": 80,
+    "temperament": "energetic",
+    "style": "masculine"
+  },
+  "n02093428-American_Staffordshire_terrier": {
+    "energy": 85,
+    "temperament": "energetic",
+    "style": "masculine"
+  },
+  "n02093647-Bedlington_terrier": {
+    "energy": 65,
+    "temperament": "gentle",
+    "style": "feminine"
+  },
+  "n02093754-Border_terrier": {
+    "energy": 75,
+    "temperament": "spunky",
+    "style": "neutral"
+  },
+  "n02093859-Kerry_blue_terrier": {
+    "energy": 70,
+    "temperament": "alert",
+    "style": "neutral"
+  },
+  "n02093991-Irish_terrier": {
+    "energy": 72,
+    "temperament": "bold",
+    "style": "masculine"
+  },
+  "n02094114-Norfolk_terrier": {
+    "energy": 68,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02094258-Norwich_terrier": {
+    "energy": 68,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02094433-Yorkshire_terrier": {
+    "energy": 60,
+    "temperament": "playful",
+    "style": "feminine"
+  },
+  "n02095314-wire-haired_fox_terrier": {
+    "energy": 78,
+    "temperament": "alert",
+    "style": "neutral"
+  },
+  "n02095570-Lakeland_terrier": {
+    "energy": 75,
+    "temperament": "energetic",
+    "style": "neutral"
+  },
+  "n02095889-Sealyham_terrier": {
+    "energy": 55,
+    "temperament": "calm",
+    "style": "neutral"
+  },
+  "n02096051-Airedale": {
+    "energy": 80,
+    "temperament": "bold",
+    "style": "masculine"
+  },
+  "n02096177-cairn": {
+    "energy": 70,
+    "temperament": "curious",
+    "style": "neutral"
+  },
+  "n02096294-Australian_terrier": {
+    "energy": 72,
+    "temperament": "active",
+    "style": "neutral"
+  },
+  "n02096437-Dandie_Dinmont": {
+    "energy": 50,
+    "temperament": "gentle",
+    "style": "neutral"
+  },
+  "n02096585-Boston_bull": {
+    "energy": 65,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02097047-miniature_schnauzer": {
+    "energy": 75,
+    "temperament": "alert",
+    "style": "neutral"
+  },
+  "n02097130-giant_schnauzer": {
+    "energy": 80,
+    "temperament": "serious",
+    "style": "masculine"
+  },
+  "n02097209-standard_schnauzer": {
+    "energy": 75,
+    "temperament": "alert",
+    "style": "neutral"
+  },
+  "n02097298-Scotch_terrier": {
+    "energy": 60,
+    "temperament": "spunky",
+    "style": "neutral"
+  },
+  "n02097474-Tibetan_terrier": {
+    "energy": 50,
+    "temperament": "calm",
+    "style": "neutral"
+  },
+  "n02097658-silky_terrier": {
+    "energy": 65,
+    "temperament": "playful",
+    "style": "feminine"
+  },
+  "n02098105-soft-coated_wheaten_terrier": {
+    "energy": 70,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02098286-West_Highland_white_terrier": {
+    "energy": 70,
+    "temperament": "alert",
+    "style": "neutral"
+  },
+  "n02098413-Lhasa": {
+    "energy": 40,
+    "temperament": "calm",
+    "style": "feminine"
+  },
+  "n02099267-flat-coated_retriever": {
+    "energy": 85,
+    "temperament": "active",
+    "style": "neutral"
+  },
+  "n02099429-curly-coated_retriever": {
+    "energy": 80,
+    "temperament": "loyal",
+    "style": "neutral"
+  },
+  "n02099601-golden_retriever": {
+    "energy": 75,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02099712-Labrador_retriever": {
+    "energy": 80,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02099849-Chesapeake_Bay_retriever": {
+    "energy": 80,
+    "temperament": "adventurous",
+    "style": "neutral"
+  },
+  "n02100236-German_short-haired_pointer": {
+    "energy": 85,
+    "temperament": "energetic",
+    "style": "masculine"
+  },
+  "n02100583-vizsla": {
+    "energy": 85,
+    "temperament": "athletic",
+    "style": "masculine"
+  },
+  "n02100735-English_setter": {
+    "energy": 70,
+    "temperament": "gentle",
+    "style": "neutral"
+  },
+  "n02100877-Irish_setter": {
+    "energy": 80,
+    "temperament": "playful",
+    "style": "feminine"
+  },
+  "n02101006-Gordon_setter": {
+    "energy": 65,
+    "temperament": "calm",
+    "style": "masculine"
+  },
+  "n02101388-Brittany_spaniel": {
+    "energy": 80,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02101556-clumber": {
+    "energy": 40,
+    "temperament": "calm",
+    "style": "neutral"
+  },
+  "n02102040-English_springer": {
+    "energy": 80,
+    "temperament": "energetic",
+    "style": "neutral"
+  },
+  "n02102177-Welsh_springer_spaniel": {
+    "energy": 75,
+    "temperament": "friendly",
+    "style": "feminine"
+  },
+  "n02102318-cocker_spaniel": {
+    "energy": 60,
+    "temperament": "gentle",
+    "style": "feminine"
+  },
+  "n02102480-Sussex_spaniel": {
+    "energy": 50,
+    "temperament": "calm",
+    "style": "neutral"
+  },
+  "n02102973-Irish_water_spaniel": {
+    "energy": 70,
+    "temperament": "playful",
+    "style": "neutral"
+  },
+  "n02104029-kuvasz": {
+    "energy": 60,
+    "temperament": "protective",
+    "style": "masculine"
+  },
+  "n02104365-schipperke": {
+    "energy": 65,
+    "temperament": "alert",
+    "style": "neutral"
+  },
+  "n02105056-groenendael": {
+    "energy": 75,
+    "temperament": "serious",
+    "style": "masculine"
+  },
+  "n02105162-malinois": {
+    "energy": 85,
+    "temperament": "protective",
+    "style": "masculine"
+  },
+  "n02105251-briard": {
+    "energy": 70,
+    "temperament": "loyal",
+    "style": "masculine"
+  },
+  "n02105412-kelpie": {
+    "energy": 80,
+    "temperament": "energetic",
+    "style": "masculine"
+  },
+  "n02105505-komondor": {
+    "energy": 60,
+    "temperament": "protective",
+    "style": "neutral"
+  },
+  "n02105641-Old_English_sheepdog": {
+    "energy": 70,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02105855-Shetland_sheepdog": {
+    "energy": 75,
+    "temperament": "alert",
+    "style": "neutral"
+  },
+  "n02106030-collie": {
+    "energy": 75,
+    "temperament": "gentle",
+    "style": "feminine"
+  },
+  "n02106166-Border_collie": {
+    "energy": 90,
+    "temperament": "intelligent",
+    "style": "neutral"
+  },
+  "n02106382-Bouvier_des_Flandres": {
+    "energy": 65,
+    "temperament": "serious",
+    "style": "masculine"
+  },
+  "n02106550-Rottweiler": {
+    "energy": 70,
+    "temperament": "protective",
+    "style": "masculine"
+  },
+  "n02106662-German_shepherd": {
+    "energy": 85,
+    "temperament": "serious",
+    "style": "masculine"
+  },
+  "n02107142-Doberman": {
+    "energy": 80,
+    "temperament": "protective",
+    "style": "masculine"
+  },
+  "n02107312-miniature_pinscher": {
+    "energy": 85,
+    "temperament": "bold",
+    "style": "neutral"
+  },
+  "n02107574-Greater_Swiss_Mountain_dog": {
+    "energy": 65,
+    "temperament": "calm",
+    "style": "masculine"
+  },
+  "n02107683-Bernese_mountain_dog": {
+    "energy": 60,
+    "temperament": "gentle",
+    "style": "neutral"
+  },
+  "n02107908-Appenzeller": {
+    "energy": 75,
+    "temperament": "energetic",
+    "style": "masculine"
+  },
+  "n02108000-EntleBucher": {
+    "energy": 75,
+    "temperament": "alert",
+    "style": "masculine"
+  },
+  "n02108089-boxer": {
+    "energy": 75,
+    "temperament": "playful",
+    "style": "masculine"
+  },
+  "n02108422-bull_mastiff": {
+    "energy": 50,
+    "temperament": "serious",
+    "style": "masculine"
+  },
+  "n02108551-Tibetan_mastiff": {
+    "energy": 55,
+    "temperament": "protective",
+    "style": "masculine"
+  },
+  "n02108915-French_bulldog": {
+    "energy": 55,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02109047-Great_Dane": {
+    "energy": 50,
+    "temperament": "calm",
+    "style": "masculine"
+  },
+  "n02109525-Saint_Bernard": {
+    "energy": 40,
+    "temperament": "calm",
+    "style": "neutral"
+  },
+  "n02109961-Eskimo_dog": {
+    "energy": 70,
+    "temperament": "energetic",
+    "style": "neutral"
+  },
+  "n02110063-malamute": {
+    "energy": 75,
+    "temperament": "active",
+    "style": "masculine"
+  },
+  "n02110185-Siberian_husky": {
+    "energy": 80,
+    "temperament": "adventurous",
+    "style": "masculine"
+  },
+  "n02110627-affenpinscher": {
+    "energy": 60,
+    "temperament": "playful",
+    "style": "neutral"
+  },
+  "n02110806-basenji": {
+    "energy": 70,
+    "temperament": "independent",
+    "style": "neutral"
+  },
+  "n02110958-pug": {
+    "energy": 50,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02111129-Leonberg": {
+    "energy": 60,
+    "temperament": "gentle",
+    "style": "neutral"
+  },
+  "n02111277-Newfoundland": {
+    "energy": 40,
+    "temperament": "calm",
+    "style": "neutral"
+  },
+  "n02111500-Great_Pyrenees": {
+    "energy": 50,
+    "temperament": "protective",
+    "style": "neutral"
+  },
+  "n02111889-Samoyed": {
+    "energy": 75,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02112018-Pomeranian": {
+    "energy": 70,
+    "temperament": "playful",
+    "style": "feminine"
+  },
+  "n02112137-chow": {
+    "energy": 50,
+    "temperament": "serious",
+    "style": "masculine"
+  },
+  "n02112350-keeshond": {
+    "energy": 65,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02112706-Brabancon_griffon": {
+    "energy": 60,
+    "temperament": "bold",
+    "style": "neutral"
+  },
+  "n02113023-Pembroke": {
+    "energy": 70,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02113186-Cardigan": {
+    "energy": 65,
+    "temperament": "friendly",
+    "style": "neutral"
+  },
+  "n02113624-toy_poodle": {
+    "energy": 70,
+    "temperament": "elegant",
+    "style": "feminine"
+  },
+  "n02113712-miniature_poodle": {
+    "energy": 70,
+    "temperament": "elegant",
+    "style": "feminine"
+  },
+  "n02113799-standard_poodle": {
+    "energy": 70,
+    "temperament": "elegant",
+    "style": "feminine"
+  },
+  "n02113978-Mexican_hairless": {
+    "energy": 60,
+    "temperament": "calm",
+    "style": "neutral"
+  },
+  "n02115641-dingo": {
+    "energy": 70,
+    "temperament": "wild",
+    "style": "masculine"
+  },
+  "n02115913-dhole": {
+    "energy": 80,
+    "temperament": "wild",
+    "style": "masculine"
+  },
+  "n02116738-African_hunting_dog": {
+    "energy": 85,
+    "temperament": "wild",
+    "style": "masculine"
+  },
+  "Unknown": {
+    "energy": 50,
+    "temperament": "neutral",
+    "style": "neutral"
+  }
+}
