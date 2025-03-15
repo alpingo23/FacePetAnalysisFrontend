@@ -1,4 +1,4 @@
-// ResultsPopup.js - Final fix for consistent layouts regardless of title length
+// ResultsPopup.js - Güncellenmiş versiyon
 import React from 'react';
 import { Modal, View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native';
 
@@ -16,7 +16,7 @@ const ResultsPopup = ({
   translations,
   language
 }) => {
-  // Function to get appropriate color for progress bar and score
+  // Skora göre renk belirleme
   const getScoreColor = (score) => {
     if (score < 45) return '#FF0000';
     if (score < 60) return '#FFFF00';
@@ -25,30 +25,28 @@ const ResultsPopup = ({
     return '#2ECC71';
   };
 
-  // Format details to show only scores
+  // Detayları formatlama (kısaltılmış başlıklar)
   const formattedDetails = details ? details.map(detail => ({
     title: detail.title[language]?.replace(' Compatibility', ''),
     score: detail.score
   })) : [];
 
-  // Format breed name to be more presentable
+  // Irk adını biçimlendirme
   const formatBreedName = (breed) => {
     if (!breed) return '';
     const breedPart = breed.split('-')[1] || breed;
     return breedPart.charAt(0).toUpperCase() + breedPart.slice(1).toLowerCase().replace(/_/g, ' ');
   };
 
-  // Function to render a progress bar with absolute positioning
+  // Progress bar render fonksiyonu (skora göre % olarak)
   const renderProgressBar = (score, color) => {
-    const maxWidth = (Platform.OS === 'ios' ? 0.46 : 0.48) * SCREEN_WIDTH * (score / 100);
-    
     return (
       <View style={styles.progressBarContainer}>
         <View 
           style={[
             styles.progressBar,
             { 
-              width: maxWidth,
+              width: `${score}%`, // Skora göre direkt % olarak
               backgroundColor: color
             }
           ]} 
@@ -57,12 +55,11 @@ const ResultsPopup = ({
     );
   };
 
-  // Function to render a category with consistent layout
+  // Kategori render fonksiyonu
   const renderCategory = (title, score, index) => {
-    // Convert multi-line titles to single line with shorter names
     let displayTitle = title;
     if (title && title.includes(' and ')) {
-      displayTitle = title.split(' and ')[0];
+      displayTitle = title.split(' and ')[0]; // Çok satırlı başlıklar için kısaltma
     }
     
     return (
@@ -88,7 +85,7 @@ const ResultsPopup = ({
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          {/* Header with X close button */}
+          {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity 
               onPress={() => {
@@ -103,7 +100,7 @@ const ResultsPopup = ({
             <View style={styles.placeholderRight} />
           </View>
 
-          {/* Pet and Face Images with Labels */}
+          {/* Pet ve Face Resimleri */}
           <View style={styles.imagesContainer}>
             <View style={styles.imageWithLabel}>
               <Image 
@@ -127,36 +124,31 @@ const ResultsPopup = ({
           <View style={styles.overallScoreSection}>
             <Text style={styles.overallTitle}>{translations[language].overallScore || 'Overall'}</Text>
             <Text style={[styles.overallScoreValue, { color: getScoreColor(compatibilityScore) }]}>
-              {compatibilityScore}
+              {compatibilityScore || 0}
             </Text>
-            {renderProgressBar(compatibilityScore, getScoreColor(compatibilityScore))}
+            {renderProgressBar(compatibilityScore || 0, getScoreColor(compatibilityScore))}
           </View>
 
-          {/* Category Scores in a grid layout */}
+          {/* Kategori Skorları */}
           <View style={styles.categoriesGrid}>
-            {/* Top Row */}
             <View style={styles.categoryRow}>
               {formattedDetails.length > 0 && (
                 <View style={styles.categoryColumn}>
                   {renderCategory(formattedDetails[0]?.title, formattedDetails[0]?.score, 0)}
                 </View>
               )}
-              
               {formattedDetails.length > 1 && (
                 <View style={styles.categoryColumn}>
                   {renderCategory(formattedDetails[1]?.title, formattedDetails[1]?.score, 1)}
                 </View>
               )}
             </View>
-            
-            {/* Bottom Row */}
             <View style={styles.categoryRow}>
               {formattedDetails.length > 2 && (
                 <View style={styles.categoryColumn}>
                   {renderCategory(formattedDetails[2]?.title, formattedDetails[2]?.score, 2)}
                 </View>
               )}
-              
               {formattedDetails.length > 3 && (
                 <View style={styles.categoryColumn}>
                   {renderCategory(formattedDetails[3]?.title, formattedDetails[3]?.score, 3)}
@@ -244,18 +236,18 @@ const styles = StyleSheet.create({
   overallScoreSection: {
     alignItems: 'center',
     width: '100%',
-    marginVertical: 5,
+    marginVertical: 10,
   },
   overallTitle: {
     color: '#fff',
     fontSize: 18,
-    marginBottom: 0,
+    marginBottom: 5,
     fontWeight: 'bold',
   },
   overallScoreValue: {
     fontSize: 56,
     fontWeight: 'bold',
-    marginBottom: 0,
+    marginBottom: 5,
     textAlign: 'center',
   },
   categoriesGrid: {
@@ -274,7 +266,7 @@ const styles = StyleSheet.create({
   categorySection: {
     alignItems: 'center',
     width: '100%',
-    height: Platform.OS === 'ios' ? 85 : 'auto', // Fixed height for consistent layout
+    height: Platform.OS === 'ios' ? 85 : 'auto', // Sabit yükseklik iOS için
     marginBottom: 10,
     justifyContent: 'center',
   },
@@ -283,7 +275,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 2,
-    maxWidth: '90%', // Prevent long titles from overflowing
+    maxWidth: '90%',
   },
   categoryScore: {
     fontSize: 36,

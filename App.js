@@ -25,6 +25,8 @@ import translations from './translations.json';
 import CustomLanguageSelector from './CustomLanguageSelector';
 import ResultsPopup from './ResultsPopup';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
+import mobileAds from 'react-native-google-mobile-ads';
 
 // Screen width for responsive design
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -99,6 +101,13 @@ const SHADOWS = {
   },
 };
 
+// Initialize Mobile Ads SDK
+mobileAds()
+  .initialize()
+  .then(adapterStatuses => {
+    console.log('Google Mobile Ads initialized:', adapterStatuses);
+  });
+
 const CombinedAnalysisApp = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [faceImage, setFaceImage] = useState(null);
@@ -118,6 +127,10 @@ const CombinedAnalysisApp = () => {
   const [language, setLanguage] = useState('uk');
   const [showResultsPopup, setShowResultsPopup] = useState(false);
   const [theme, setTheme] = useState('light');
+  const [isAdLoaded, setIsAdLoaded] = useState(false);
+
+  // Interstitial Ad
+  const interstitialAd = InterstitialAd.createForAdRequest('ca-app-pub-3940256099942544/1033173712'); // Test ID
 
   const animationTimer = useRef(null);
   const blinkInterval = useRef(null);
@@ -129,11 +142,6 @@ const CombinedAnalysisApp = () => {
 
     const handleAppStateChange = (nextAppState) => {
       console.log('AppState changed to:', nextAppState);
-      if (nextAppState === 'active') {
-        console.log('App returned to foreground');
-      } else if (nextAppState === 'background') {
-        console.log('App went to background');
-      }
     };
 
     AppState.addEventListener('change', handleAppStateChange);
@@ -144,6 +152,36 @@ const CombinedAnalysisApp = () => {
       AppState.removeEventListener('change', handleAppStateChange);
     };
   }, []);
+
+  // Interstitial Ad Event Listeners
+  useEffect(() => {
+    const unsubscribeLoaded = interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
+      setIsAdLoaded(true);
+      console.log('Interstitial ad loaded.');
+    });
+
+    const unsubscribeError = interstitialAd.addAdEventListener(AdEventType.ERROR, (error) => {
+      console.log('Ad failed to load:', error);
+      setIsAdLoaded(false);
+      setShowResultsPopup(true); // Reklam yüklenmezse direkt popup
+    });
+
+    const unsubscribeClosed = interstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
+      console.log('Interstitial ad closed.');
+      setShowResultsPopup(true);
+      interstitialAd.load(); // Yeni reklam yükle
+      setIsAdLoaded(false);
+    });
+
+    console.log('Loading interstitial ad...');
+    interstitialAd.load();
+
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeError();
+      unsubscribeClosed();
+    };
+  }, [interstitialAd]);
 
   const formatBreedName = (breed) => {
     if (!breed) return '';
@@ -156,7 +194,6 @@ const CombinedAnalysisApp = () => {
       if (Platform.OS === 'android') {
         const permission = PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES;
         const granted = await PermissionsAndroid.check(permission);
-        console.log('Android: Gallery permission check:', granted);
         if (granted) return true;
 
         const result = await PermissionsAndroid.request(permission, {
@@ -166,7 +203,6 @@ const CombinedAnalysisApp = () => {
           buttonNegative: translations[language].denyButton,
         });
 
-        console.log('Android: Gallery permission request result:', result);
         if (result === PermissionsAndroid.RESULTS.GRANTED) return true;
         else {
           Alert.alert(
@@ -181,20 +217,13 @@ const CombinedAnalysisApp = () => {
         }
       } else if (Platform.OS === 'ios') {
         const permissionStatus = await check(PERMISSIONS.IOS.PHOTO_LIBRARY);
-        console.log('iOS: Gallery permission status:', permissionStatus);
-
-        if (permissionStatus === RESULTS.GRANTED) {
-          console.log('iOS: Gallery permission already granted');
-          return true;
-        }
+        if (permissionStatus === RESULTS.GRANTED) return true;
 
         if (permissionStatus === RESULTS.DENIED) {
           const result = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
-          console.log('iOS: Gallery permission request result:', result);
           if (result === RESULTS.GRANTED) return true;
         }
 
-        console.log('iOS: Gallery permission denied or unavailable');
         Alert.alert(
           translations[language].permissionDeniedTitle,
           translations[language].permissionDeniedMessage,
@@ -218,11 +247,7 @@ const CombinedAnalysisApp = () => {
       if (Platform.OS === 'android') {
         const permission = PermissionsAndroid.PERMISSIONS.CAMERA;
         const granted = await PermissionsAndroid.check(permission);
-        console.log('Android: Camera permission check:', granted);
-        if (granted) {
-          console.log('Android: Camera permission already granted');
-          return true;
-        }
+        if (granted) return true;
 
         const result = await PermissionsAndroid.request(permission, {
           title: translations[language].cameraPermissionTitle,
@@ -231,12 +256,8 @@ const CombinedAnalysisApp = () => {
           buttonNegative: translations[language].denyButton,
         });
 
-        console.log('Android: Camera permission request result:', result);
-        if (result === PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('Android: Camera permission granted');
-          return true;
-        } else {
-          console.log('Android: Camera permission denied');
+        if (result === PermissionsAndroid.RESULTS.GRANTED) return true;
+        else {
           Alert.alert(
             translations[language].permissionDeniedTitle,
             translations[language].permissionDeniedMessageCamera,
@@ -249,23 +270,13 @@ const CombinedAnalysisApp = () => {
         }
       } else if (Platform.OS === 'ios') {
         const permissionStatus = await check(PERMISSIONS.IOS.CAMERA);
-        console.log('iOS: Camera permission status:', permissionStatus);
-
-        if (permissionStatus === RESULTS.GRANTED) {
-          console.log('iOS: Camera permission already granted');
-          return true;
-        }
+        if (permissionStatus === RESULTS.GRANTED) return true;
 
         if (permissionStatus === RESULTS.DENIED) {
           const result = await request(PERMISSIONS.IOS.CAMERA);
-          console.log('iOS: Camera permission request result:', result);
-          if (result === RESULTS.GRANTED) {
-            console.log('iOS: Camera permission granted');
-            return true;
-          }
+          if (result === RESULTS.GRANTED) return true;
         }
 
-        console.log('iOS: Camera permission denied or unavailable');
         Alert.alert(
           translations[language].permissionDeniedTitle,
           translations[language].permissionDeniedMessageCamera,
@@ -286,34 +297,17 @@ const CombinedAnalysisApp = () => {
 
   const handlePetUpload = async () => {
     const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) {
-      console.log('Pet Upload: Permission denied, aborting');
-      return;
-    }
+    if (!hasPermission) return;
 
     const options = { mediaType: 'photo', includeBase64: true };
-    console.log('Pet Upload: Launching image library with options:', options);
-
     launchImageLibrary(options, (response) => {
-      console.log('Pet Upload: Image library response:', response);
-      if (response.didCancel) {
-        console.log('Pet Upload: User cancelled image picker');
-        return;
-      }
+      if (response.didCancel) return;
       if (response.errorCode) {
-        console.error('Pet Upload: Error code:', response.errorCode, 'Message:', response.errorMessage);
         setError(translations[language].imagePickerError + (response.errorMessage || 'Unknown error'));
         return;
       }
       if (response.assets && response.assets.length > 0) {
         const asset = response.assets[0];
-        console.log('Pet Upload: Asset received:', {
-          uri: asset.uri,
-          type: asset.type,
-          fileName: asset.fileName,
-          width: asset.width,
-          height: asset.height,
-        });
         setPetFile({
           uri: asset.uri,
           type: asset.type || 'image/jpeg',
@@ -325,43 +319,23 @@ const CombinedAnalysisApp = () => {
         setPetImage(petImageData);
         setPetImageSize({ width: asset.width, height: asset.height });
         setError(null);
-      } else {
-        console.log('Pet Upload: No assets returned');
-        setError(translations[language].imagePickerError + 'No image selected.');
       }
     });
   };
 
   const handleFaceUpload = async () => {
     const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) {
-      console.log('Face Upload: Permission denied, aborting');
-      return;
-    }
+    if (!hasPermission) return;
 
     const options = { mediaType: 'photo', includeBase64: true };
-    console.log('Face Upload: Launching image library with options:', options);
-
     launchImageLibrary(options, (response) => {
-      console.log('Face Upload: Image library response:', response);
-      if (response.didCancel) {
-        console.log('Face Upload: User cancelled image picker');
-        return;
-      }
+      if (response.didCancel) return;
       if (response.errorCode) {
-        console.error('Face Upload: Error code:', response.errorCode, 'Message:', response.errorMessage);
         setError(translations[language].imagePickerError + (response.errorMessage || 'Unknown error'));
         return;
       }
       if (response.assets && response.assets.length > 0) {
         const asset = response.assets[0];
-        console.log('Face Upload: Asset received:', {
-          uri: asset.uri,
-          type: asset.type,
-          fileName: asset.fileName,
-          width: asset.width,
-          height: asset.height,
-        });
         setFaceFile({
           uri: asset.uri,
           type: asset.type || 'image/jpeg',
@@ -373,45 +347,23 @@ const CombinedAnalysisApp = () => {
         setFaceImage(faceImageData);
         setFaceImageSize({ width: asset.width, height: asset.height });
         setError(null);
-      } else {
-        console.log('Face Upload: No assets returned');
-        setError(translations[language].imagePickerError + 'No image selected.');
       }
     });
   };
 
   const handlePetCamera = async () => {
     const hasPermission = await requestCameraPermission();
-    if (!hasPermission) {
-      console.log('Pet Camera: Permission denied, aborting');
-      return;
-    }
+    if (!hasPermission) return;
 
     const options = { mediaType: 'photo', includeBase64: true };
-    console.log('Pet Camera: Launching camera with options:', options);
-
     launchCamera(options, (response) => {
-      console.log('Pet Camera: Camera response:', response);
-
-      if (response.didCancel) {
-        console.log('Pet Camera: User cancelled camera');
-        return;
-      }
+      if (response.didCancel) return;
       if (response.errorCode) {
-        const errorMessage = response.errorMessage || 'Unknown error';
-        console.error('Pet Camera: Error code:', response.errorCode, 'Message:', errorMessage);
-        setError(translations[language].cameraError + errorMessage);
+        setError(translations[language].cameraError + (response.errorMessage || 'Unknown error'));
         return;
       }
       if (response.assets && response.assets.length > 0) {
         const asset = response.assets[0];
-        console.log('Pet Camera: Asset received:', {
-          uri: asset.uri,
-          type: asset.type,
-          fileName: asset.fileName,
-          width: asset.width,
-          height: asset.height,
-        });
         setPetFile({
           uri: asset.uri,
           type: asset.type || 'image/jpeg',
@@ -423,45 +375,23 @@ const CombinedAnalysisApp = () => {
         setPetImage(petImageData);
         setPetImageSize({ width: asset.width, height: asset.height });
         setError(null);
-      } else {
-        console.log('Pet Camera: No assets returned');
-        setError(translations[language].cameraError + 'No photo captured.');
       }
     });
   };
 
   const handleFaceCamera = async () => {
     const hasPermission = await requestCameraPermission();
-    if (!hasPermission) {
-      console.log('Face Camera: Permission denied, aborting');
-      return;
-    }
+    if (!hasPermission) return;
 
     const options = { mediaType: 'photo', includeBase64: true };
-    console.log('Face Camera: Launching camera with options:', options);
-
     launchCamera(options, (response) => {
-      console.log('Face Camera: Camera response:', response);
-
-      if (response.didCancel) {
-        console.log('Face Camera: User cancelled camera');
-        return;
-      }
+      if (response.didCancel) return;
       if (response.errorCode) {
-        const errorMessage = response.errorMessage || 'Unknown error';
-        console.error('Face Camera: Error code:', response.errorCode, 'Message:', errorMessage);
-        setError(translations[language].cameraError + errorMessage);
+        setError(translations[language].cameraError + (response.errorMessage || 'Unknown error'));
         return;
       }
       if (response.assets && response.assets.length > 0) {
         const asset = response.assets[0];
-        console.log('Face Camera: Asset received:', {
-          uri: asset.uri,
-          type: asset.type,
-          fileName: asset.fileName,
-          width: asset.width,
-          height: asset.height,
-        });
         setFaceFile({
           uri: asset.uri,
           type: asset.type || 'image/jpeg',
@@ -473,9 +403,6 @@ const CombinedAnalysisApp = () => {
         setFaceImage(faceImageData);
         setFaceImageSize({ width: asset.width, height: asset.height });
         setError(null);
-      } else {
-        console.log('Face Camera: No assets returned');
-        setError(translations[language].cameraError + 'No photo captured.');
       }
     });
   };
@@ -483,7 +410,6 @@ const CombinedAnalysisApp = () => {
   const analyzeFace = async () => {
     if (!faceImage || !faceFile) {
       setError(translations[language].errorFaceImageNotLoaded);
-      console.log('Face Analysis: No image loaded');
       return null;
     }
 
@@ -496,12 +422,9 @@ const CombinedAnalysisApp = () => {
         name: faceFile.name,
       });
 
-      console.log('Face Analysis: Sending request to backend');
       const res = await axios.post('https://face-analysis-backend-3c9a9754c4c7.herokuapp.com/predict_face', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      console.log('Face Analysis: Backend response:', res.data);
 
       const imageWidth = res.data.imageDimensions?.width || faceFile.width || 452;
       const imageHeight = res.data.imageDimensions?.height || faceFile.height || 678;
@@ -552,7 +475,7 @@ const CombinedAnalysisApp = () => {
       setFaceResults(result);
       return result;
     } catch (err) {
-      console.error('Face Analysis: Error:', err);
+      console.error('Face Analysis Error:', err);
       setError(translations[language].faceBackendError + err.message);
       return null;
     } finally {
@@ -563,7 +486,6 @@ const CombinedAnalysisApp = () => {
   const analyzePet = async () => {
     if (!petImage || !petFile) {
       setError(translations[language].errorPetImageNotLoaded);
-      console.log('Pet Analysis: No image loaded');
       return null;
     }
 
@@ -575,12 +497,9 @@ const CombinedAnalysisApp = () => {
         name: petFile.name,
       });
 
-      console.log('Pet Analysis: Sending request to backend');
       const res = await axios.post('https://pet-analysis-backend-1546ecd6728b.herokuapp.com/predict_pet', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      console.log('Pet Analysis: Backend response:', res.data);
 
       const imageWidth = petFile.width || 1000;
       const imageHeight = petFile.height || 700;
@@ -620,7 +539,7 @@ const CombinedAnalysisApp = () => {
       setPetResults(result);
       return result;
     } catch (err) {
-      console.error('Pet Analysis: Error:', err);
+      console.error('Pet Analysis Error:', err);
       setError(translations[language].petBackendError + err.message);
       return null;
     }
@@ -629,12 +548,10 @@ const CombinedAnalysisApp = () => {
   const startAnalysis = async () => {
     if (!petImage) {
       setError(translations[language].errorUploadPetImage);
-      console.log('Start Analysis: No pet image uploaded');
       return;
     }
     if (!faceImage) {
       setError(translations[language].errorUploadFaceImage);
-      console.log('Start Analysis: No face image uploaded');
       return;
     }
 
@@ -647,7 +564,6 @@ const CombinedAnalysisApp = () => {
     if (!faceDetections || !petResult) {
       setIsAnalyzing(false);
       setCurrentStep(2);
-      console.log('Start Analysis: Analysis failed');
       return;
     }
 
@@ -663,7 +579,14 @@ const CombinedAnalysisApp = () => {
         animationTimer.current = requestAnimationFrame(animate);
       } else {
         setIsAnalyzing(false);
-        setShowResultsPopup(true);
+        console.log('Analysis complete. Ad loaded:', isAdLoaded);
+        if (isAdLoaded) {
+          console.log('Showing interstitial ad...');
+          interstitialAd.show();
+        } else {
+          console.log('Ad not loaded, showing ResultsPopup directly');
+          setShowResultsPopup(true);
+        }
       }
     };
     animate();
@@ -685,7 +608,6 @@ const CombinedAnalysisApp = () => {
     setFaceImageSize({ width: 324, height: 324 });
     setShowResultsPopup(false);
     if (animationTimer.current) cancelAnimationFrame(animationTimer.current);
-    console.log('Analysis reset');
   };
 
   const connectFaceFeatures = (landmarks) => {
@@ -888,41 +810,25 @@ const CombinedAnalysisApp = () => {
                   {isLVisible && (
                     <>
                       <Path
-                        d={`M${faceResults[0].detection.box.x},${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x - 22},${
-                          faceResults[0].detection.box.y
-                        } L${faceResults[0].detection.box.x - 22},${faceResults[0].detection.box.y + 22}`}
+                        d={`M${faceResults[0].detection.box.x},${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x - 22},${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x - 22},${faceResults[0].detection.box.y + 22}`}
                         fill="none"
                         stroke="#ff3333"
                         strokeWidth="3"
                       />
                       <Path
-                        d={`M${faceResults[0].detection.box.x + faceResults[0].detection.box.width},${faceResults[0].detection.box.y} L${
-                          faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22
-                        },${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${
-                          faceResults[0].detection.box.y + 22
-                        }`}
+                        d={`M${faceResults[0].detection.box.x + faceResults[0].detection.box.width},${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${faceResults[0].detection.box.y + 22}`}
                         fill="none"
                         stroke="#ff3333"
                         strokeWidth="3"
                       />
                       <Path
-                        d={`M${faceResults[0].detection.box.x},${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${
-                          faceResults[0].detection.box.x - 22
-                        },${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${faceResults[0].detection.box.x - 22},${
-                          faceResults[0].detection.box.y + faceResults[0].detection.box.height - 22
-                        }`}
+                        d={`M${faceResults[0].detection.box.x},${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${faceResults[0].detection.box.x - 22},${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${faceResults[0].detection.box.x - 22},${faceResults[0].detection.box.y + faceResults[0].detection.box.height - 22}`}
                         fill="none"
                         stroke="#ff3333"
                         strokeWidth="3"
                       />
                       <Path
-                        d={`M${faceResults[0].detection.box.x + faceResults[0].detection.box.width},${
-                          faceResults[0].detection.box.y + faceResults[0].detection.box.height
-                        } L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${
-                          faceResults[0].detection.box.y + faceResults[0].detection.box.height
-                        } L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${
-                          faceResults[0].detection.box.y + faceResults[0].detection.box.height - 22
-                        }`}
+                        d={`M${faceResults[0].detection.box.x + faceResults[0].detection.box.width},${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${faceResults[0].detection.box.y + faceResults[0].detection.box.height - 22}`}
                         fill="none"
                         stroke="#ff3333"
                         strokeWidth="3"
@@ -1002,9 +908,7 @@ const CombinedAnalysisApp = () => {
         </View>
         <Text style={getStyles().compatibilityMessage}>
           {compatibility?.message[language]?.replace(petResults?.predicted_label, formatBreedName(petResults?.predicted_label)) ||
-            `${translations[language].compatibilityMessagePrefix} ${formatBreedName(petResults?.predicted_label)} ${
-              translations[language].compatibilityMessageSuffix
-            }`}
+            `${translations[language].compatibilityMessagePrefix} ${formatBreedName(petResults?.predicted_label)} ${translations[language].compatibilityMessageSuffix}`}
         </Text>
       </View>
 
@@ -1016,9 +920,7 @@ const CombinedAnalysisApp = () => {
               <Text style={[getStyles().detailCardScore, { color: getScoreColor(detail.score) }]}>{detail.score}/100</Text>
             </View>
             <View style={getStyles().progressBarBackground}>
-              <View
-                style={[getStyles().progressBar, { width: `${detail.score}%`, backgroundColor: getScoreColor(detail.score) }]}
-              />
+              <View style={[getStyles().progressBar, { width: `${detail.score}%`, backgroundColor: getScoreColor(detail.score) }]} />
             </View>
             <Text style={getStyles().detailCardDescription}>{detail.description[language]}</Text>
           </View>
@@ -1037,9 +939,7 @@ const CombinedAnalysisApp = () => {
               <Text style={getStyles().infoValue}>{Math.round(petResults.confidence * 100)}%</Text>
             </View>
             <View style={getStyles().progressBarBackground}>
-              <View
-                style={[getStyles().progressBar, { width: `${petResults.confidence * 100}%`, backgroundColor: COLORS[theme].primary }]}
-              />
+              <View style={[getStyles().progressBar, { width: `${petResults.confidence * 100}%`, backgroundColor: COLORS[theme].primary }]} />
             </View>
           </View>
         </>
@@ -1090,365 +990,361 @@ const CombinedAnalysisApp = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  const getStyles = () => StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: COLORS[theme].light,
-    },
-    safeArea: {
-      flex: 1,
-    },
-    header: {
-      backgroundColor: COLORS[theme].primary,
-      padding: 18,
-      alignItems: 'center',
-      borderBottomLeftRadius: 20,
-      borderBottomRightRadius: 20,
-      ...SHADOWS.medium,
-    },
-    headerTopRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: '100%',
-      marginBottom: 10,
-    },
-    languageWrapper: {
-      width: 40,
-      alignItems: 'flex-start',
-    },
-    logoContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    smallLogo: {
-      width: 50,
-      height: 50,
-    },
-    themeToggle: {
-      width: 40,
-      height: 40,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-      borderRadius: 8,
-      overflow: 'hidden',
-    },
-    themeToggleText: {
-      fontSize: 20,
-      color: COLORS[theme].white,
-    },
-    placeholder: {
-      width: 40,
-    },
-    headerTitle: {
-      color: COLORS[theme].dark,
-      fontSize: 26,
-      fontWeight: 'bold',
-      letterSpacing: 0.5,
-    },
-    main: {
-      padding: 18,
-      width: '100%',
-    },
-    stepContainer: {
-      marginBottom: 25,
-      width: '100%',
-    },
-    stepTitle: {
-      fontSize: 22,
-      textAlign: 'center',
-      marginBottom: 24,
-      color: COLORS[theme].dark,
-      fontWeight: 'bold',
-      letterSpacing: 0.5,
-    },
-    uploadContainer: {
-      marginBottom: 25,
-      width: '100%',
-      alignItems: 'center',
-    },
-    buttonRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: 10,
-      width: '100%',
-    },
-    actionButton: {
-      backgroundColor: COLORS[theme].primary,
-      paddingVertical: 8,
-      paddingHorizontal: 15,
-      borderRadius: 25,
-      minWidth: SCREEN_WIDTH * 0.35,
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...SHADOWS.colored,
-    },
-    actionButtonText: {
-      color: COLORS[theme].white,
-      fontSize: 14,
-      fontWeight: 'bold',
-      textAlign: 'center',
-      numberOfLines: 2,
-      ellipsizeMode: 'tail',
-    },
-    continueButton: {
-      backgroundColor: COLORS[theme].success,
-      paddingVertical: 15,
-      paddingHorizontal: 30,
-      borderRadius: 50,
-      minWidth: SCREEN_WIDTH * 0.4,
-      alignItems: 'center',
-      ...SHADOWS.medium,
-    },
-    backButton: {
-      backgroundColor: COLORS[theme].accent,
-      paddingVertical: 15,
-      paddingHorizontal: 30,
-      borderRadius: 50,
-      minWidth: 100,
-      alignItems: 'center',
-      ...SHADOWS.accent,
-    },
-    buttonText: {
-      color: COLORS[theme].white,
-      fontSize: 18,
-      fontWeight: 'bold',
-      textAlign: 'center',
-    },
-    imageContainer: {
-      width: '100%',
-      alignItems: 'center',
-      marginVertical: 15,
-    },
-    image: {
-      borderRadius: 20,
-      ...SHADOWS.medium,
-      borderWidth: 3,
-      borderColor: COLORS[theme].dark,
-    },
-    progressContainer: {
-      margin: 25,
-      width: '90%',
-    },
-    progressBarBackground: {
-      height: 15,
-      backgroundColor: 'rgba(108, 99, 255, 0.2)',
-      borderRadius: 10,
-      overflow: 'hidden',
-    },
-    progressBar: {
-      height: '100',
-      borderRadius: 10,
-    },
-    progressText: {
-      textAlign: 'center',
-      fontSize: 16,
-      color: COLORS[theme].dark,
-      fontWeight: '600',
-      marginTop: 8,
-    },
-    analysisContainer: {
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 30,
-      width: '100%',
-    },
-    analysisItem: {
-      width: '100%',
-      marginBottom: 25,
-      backgroundColor: COLORS[theme].white,
-      borderRadius: 20,
-      padding: 15,
-      ...SHADOWS.small,
-    },
-    analysisTitle: {
-      textAlign: 'center',
-      marginBottom: 15,
-      color: COLORS[theme].primary,
-      fontSize: 20,
-      fontWeight: 'bold',
-    },
-    imageWrapper: {
-      position: 'relative',
-      width: 300,
-      height: 300,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 20,
-      overflow: 'hidden',
-    },
-    svgOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-    },
-    loadingOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(44, 47, 51, 0.85)',
-      borderRadius: 15,
-    },
-    loadingText: {
-      color: COLORS[theme].dark,
-      fontSize: 20,
-      marginTop: 15,
-      fontWeight: 'bold',
-    },
-    compatibilityCard: {
-      backgroundColor: 'rgba(108, 99, 255, 0.2)',
-      borderRadius: 15,
-      padding: 15,
-      marginBottom: 15,
-      ...SHADOWS.small,
-    },
-    compatibilityTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: COLORS[theme].dark,
-      textAlign: 'center',
-      marginBottom: 10,
-    },
-    compatibilityScoreContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    compatibilityImage: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      borderWidth: 2,
-      borderColor: COLORS[theme].dark,
-    },
-    compatibilityScoreText: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: COLORS[theme].dark,
-    },
-    compatibilityMessage: {
-      fontSize: 14,
-      color: COLORS[theme].dark,
-      textAlign: 'center',
-      lineHeight: 20,
-    },
-    detailCard: {
-      backgroundColor: COLORS[theme].white,
-      borderRadius: 15,
-      padding: 15,
-      marginBottom: 12,
-      borderLeftWidth: 4,
-      borderLeftColor: COLORS[theme].primary,
-      ...SHADOWS.small,
-    },
-    detailCardHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    detailCardTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: COLORS[theme].dark,
-      flex: 1,
-    },
-    detailCardScore: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: COLORS[theme].dark,
-    },
-    detailCardDescription: {
-      fontSize: 14,
-      color: COLORS[theme].dark,
-      marginTop: 8,
-      lineHeight: 20,
-    },
-    fullWidthImage: {
-      width: '100%',
-      height: 200,
-      borderRadius: 15,
-      marginVertical: 12,
-      ...SHADOWS.small,
-    },
-    infoCard: {
-      backgroundColor: COLORS[theme].white,
-      borderRadius: 15,
-      padding: 15,
-      marginBottom: 15,
-      ...SHADOWS.small,
-    },
-    infoRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    infoLabel: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: COLORS[theme].dark,
-    },
-    infoValue: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: COLORS[theme].primary,
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 20,
-      width: '100%',
-    },
-    greenButton: {
-      backgroundColor: COLORS[theme].success,
-      borderRadius: 10,
-      paddingVertical: 15,
-      marginVertical: 10,
-      alignItems: 'center',
-      ...SHADOWS.medium,
-      flex: 1,
-      marginRight: 5,
-    },
-    redButton: {
-      backgroundColor: COLORS[theme].danger,
-      borderRadius: 10,
-      paddingVertical: 15,
-      marginVertical: 10,
-      alignItems: 'center',
-      ...SHADOWS.medium,
-      flex: 1,
-      marginLeft: 5,
-    },
-    errorText: {
-      color: COLORS[theme].danger,
-      textAlign: 'center',
-      fontSize: 16,
-      backgroundColor: 'rgba(242, 95, 92, 0.2)',
-      padding: 10,
-      borderRadius: 10,
-      marginVertical: 10,
-      fontWeight: 'bold',
-    },
-    warningText: {
-      color: COLORS[theme].warning,
-      textAlign: 'center',
-      fontSize: 16,
-      backgroundColor: 'rgba(255, 0, 0, 0.23)',
-      padding: 10,
-      borderRadius: 10,
-      marginVertical: 10,
-      fontStyle: 'italic',
-    },
-  });
+  const getStyles = () =>
+    StyleSheet.create({
+      container: {
+        flex: 1,
+        backgroundColor: COLORS[theme].light,
+      },
+      safeArea: {
+        flex: 1,
+      },
+      header: {
+        backgroundColor: COLORS[theme].primary,
+        padding: 18,
+        alignItems: 'center',
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        ...SHADOWS.medium,
+      },
+      headerTopRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        marginBottom: 10,
+      },
+      languageWrapper: {
+        width: 40,
+        alignItems: 'flex-start',
+      },
+      logoContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      smallLogo: {
+        width: 50,
+        height: 50,
+      },
+      themeToggle: {
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 8,
+        overflow: 'hidden',
+      },
+      themeToggleText: {
+        fontSize: 20,
+        color: COLORS[theme].white,
+      },
+      headerTitle: {
+        color: COLORS[theme].dark,
+        fontSize: 26,
+        fontWeight: 'bold',
+        letterSpacing: 0.5,
+      },
+      main: {
+        padding: 18,
+        width: '100%',
+      },
+      stepContainer: {
+        marginBottom: 25,
+        width: '100%',
+      },
+      stepTitle: {
+        fontSize: 22,
+        textAlign: 'center',
+        marginBottom: 24,
+        color: COLORS[theme].dark,
+        fontWeight: 'bold',
+        letterSpacing: 0.5,
+      },
+      uploadContainer: {
+        marginBottom: 25,
+        width: '100%',
+        alignItems: 'center',
+      },
+      buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 10,
+        width: '100%',
+      },
+      actionButton: {
+        backgroundColor: COLORS[theme].primary,
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        borderRadius: 25,
+        minWidth: SCREEN_WIDTH * 0.35,
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...SHADOWS.colored,
+      },
+      actionButtonText: {
+        color: COLORS[theme].white,
+        fontSize: 14,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        numberOfLines: 2,
+      },
+      continueButton: {
+        backgroundColor: COLORS[theme].success,
+        paddingVertical: 15,
+        paddingHorizontal: 30,
+        borderRadius: 50,
+        minWidth: SCREEN_WIDTH * 0.4,
+        alignItems: 'center',
+        ...SHADOWS.medium,
+      },
+      backButton: {
+        backgroundColor: COLORS[theme].accent,
+        paddingVertical: 15,
+        paddingHorizontal: 30,
+        borderRadius: 50,
+        minWidth: 100,
+        alignItems: 'center',
+        ...SHADOWS.accent,
+      },
+      buttonText: {
+        color: COLORS[theme].white,
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
+      },
+      imageContainer: {
+        width: '100%',
+        alignItems: 'center',
+        marginVertical: 15,
+      },
+      image: {
+        borderRadius: 20,
+        ...SHADOWS.medium,
+        borderWidth: 3,
+        borderColor: COLORS[theme].dark,
+      },
+      progressContainer: {
+        margin: 25,
+        width: '90%',
+      },
+      progressBarBackground: {
+        height: 15,
+        backgroundColor: 'rgba(108, 99, 255, 0.2)',
+        borderRadius: 10,
+        overflow: 'hidden',
+      },
+      progressBar: {
+        height: '100%',
+        backgroundColor: COLORS[theme].primary,
+        borderRadius: 10,
+      },
+      progressText: {
+        textAlign: 'center',
+        fontSize: 16,
+        color: COLORS[theme].dark,
+        fontWeight: '600',
+        marginTop: 8,
+      },
+      analysisContainer: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 30,
+        width: '100%',
+      },
+      analysisItem: {
+        width: '100%',
+        marginBottom: 25,
+        backgroundColor: COLORS[theme].white,
+        borderRadius: 20,
+        padding: 15,
+        ...SHADOWS.small,
+      },
+      analysisTitle: {
+        textAlign: 'center',
+        marginBottom: 15,
+        color: COLORS[theme].primary,
+        fontSize: 20,
+        fontWeight: 'bold',
+      },
+      imageWrapper: {
+        position: 'relative',
+        width: 300,
+        height: 300,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 20,
+        overflow: 'hidden',
+      },
+      svgOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+      },
+      loadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(44, 47, 51, 0.85)',
+        borderRadius: 15,
+      },
+      loadingText: {
+        color: COLORS[theme].dark,
+        fontSize: 20,
+        marginTop: 15,
+        fontWeight: 'bold',
+      },
+      compatibilityCard: {
+        backgroundColor: 'rgba(108, 99, 255, 0.2)',
+        borderRadius: 15,
+        padding: 15,
+        marginBottom: 15,
+        ...SHADOWS.small,
+      },
+      compatibilityTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS[theme].dark,
+        textAlign: 'center',
+        marginBottom: 10,
+      },
+      compatibilityScoreContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+      },
+      compatibilityImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        borderWidth: 2,
+        borderColor: COLORS[theme].dark,
+      },
+      compatibilityScoreText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+      },
+      compatibilityMessage: {
+        fontSize: 14,
+        color: COLORS[theme].dark,
+        textAlign: 'center',
+        lineHeight: 20,
+      },
+      detailCard: {
+        backgroundColor: COLORS[theme].white,
+        borderRadius: 15,
+        padding: 15,
+        marginBottom: 12,
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS[theme].primary,
+        ...SHADOWS.small,
+      },
+      detailCardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+      },
+      detailCardTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: COLORS[theme].dark,
+        flex: 1,
+      },
+      detailCardScore: {
+        fontSize: 18,
+        fontWeight: 'bold',
+      },
+      detailCardDescription: {
+        fontSize: 14,
+        color: COLORS[theme].dark,
+        marginTop: 8,
+        lineHeight: 20,
+      },
+      fullWidthImage: {
+        width: '100%',
+        height: 200,
+        borderRadius: 15,
+        marginVertical: 12,
+        ...SHADOWS.small,
+      },
+      infoCard: {
+        backgroundColor: COLORS[theme].white,
+        borderRadius: 15,
+        padding: 15,
+        marginBottom: 15,
+        ...SHADOWS.small,
+      },
+      infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+      },
+      infoLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: COLORS[theme].dark,
+      },
+      infoValue: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: COLORS[theme].primary,
+      },
+      buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+        width: '100%',
+      },
+      greenButton: {
+        backgroundColor: COLORS[theme].success,
+        borderRadius: 10,
+        paddingVertical: 15,
+        marginVertical: 10,
+        alignItems: 'center',
+        ...SHADOWS.medium,
+        flex: 1,
+        marginRight: 5,
+      },
+      redButton: {
+        backgroundColor: COLORS[theme].danger,
+        borderRadius: 10,
+        paddingVertical: 15,
+        marginVertical: 10,
+        alignItems: 'center',
+        ...SHADOWS.medium,
+        flex: 1,
+        marginLeft: 5,
+      },
+      errorText: {
+        color: COLORS[theme].danger,
+        textAlign: 'center',
+        fontSize: 16,
+        backgroundColor: 'rgba(242, 95, 92, 0.2)',
+        padding: 10,
+        borderRadius: 10,
+        marginVertical: 10,
+        fontWeight: 'bold',
+      },
+      warningText: {
+        color: COLORS[theme].warning,
+        textAlign: 'center',
+        fontSize: 16,
+        backgroundColor: 'rgba(255, 0, 0, 0.23)',
+        padding: 10,
+        borderRadius: 10,
+        marginVertical: 10,
+        fontStyle: 'italic',
+      },
+    });
 
   return (
     <SafeAreaView style={getStyles().safeArea}>

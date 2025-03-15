@@ -66,4 +66,5 @@ dependencies {
     // Hermes bağımlılığını kaldırıyoruz:
     // implementation("com.facebook.react:hermes-android")
     implementation jscFlavor
+    implementation 'com.google.android.gms:play-services-ads:24.0.0'
 }
