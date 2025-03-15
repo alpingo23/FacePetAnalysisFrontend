@@ -105,7 +105,7 @@ const SHADOWS = {
 mobileAds()
   .initialize()
   .then(adapterStatuses => {
-    console.log('Google Mobile Ads initialized:', adapterStatuses);
+    console.log('[AD] Google Mobile Ads initialized:', adapterStatuses);
   });
 
 const CombinedAnalysisApp = () => {
@@ -128,9 +128,10 @@ const CombinedAnalysisApp = () => {
   const [showResultsPopup, setShowResultsPopup] = useState(false);
   const [theme, setTheme] = useState('light');
   const [isAdLoaded, setIsAdLoaded] = useState(false);
+  const [isAdLoading, setIsAdLoading] = useState(false);
 
-  // Interstitial Ad
-  const interstitialAd = InterstitialAd.createForAdRequest('ca-app-pub-3940256099942544/1033173712'); // Test ID
+  // Interstitial Ad (useRef ile sabit tutuyoruz)
+  const interstitialAdRef = useRef(InterstitialAd.createForAdRequest('ca-app-pub-3940256099942544/1033173712'));
 
   const animationTimer = useRef(null);
   const blinkInterval = useRef(null);
@@ -141,47 +142,67 @@ const CombinedAnalysisApp = () => {
     }, 500);
 
     const handleAppStateChange = (nextAppState) => {
-      console.log('AppState changed to:', nextAppState);
+      console.log('[APP] AppState changed to:', nextAppState);
     };
 
-    AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
       if (blinkInterval.current) clearInterval(blinkInterval.current);
       if (animationTimer.current) cancelAnimationFrame(animationTimer.current);
-      AppState.removeEventListener('change', handleAppStateChange);
+      subscription.remove();
     };
   }, []);
 
   // Interstitial Ad Event Listeners
   useEffect(() => {
+    const interstitialAd = interstitialAdRef.current;
+
     const unsubscribeLoaded = interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
+      console.log('[AD] Interstitial ad loaded successfully.');
       setIsAdLoaded(true);
-      console.log('Interstitial ad loaded.');
+      setIsAdLoading(false);
     });
 
     const unsubscribeError = interstitialAd.addAdEventListener(AdEventType.ERROR, (error) => {
-      console.log('Ad failed to load:', error);
+      console.log('[AD] Ad failed to load:', error);
       setIsAdLoaded(false);
-      setShowResultsPopup(true); // Reklam yüklenmezse direkt popup
+      setIsAdLoading(false);
+      // Hata durumunda pop-up'ı aç
+      setShowResultsPopup(true);
     });
 
     const unsubscribeClosed = interstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
-      console.log('Interstitial ad closed.');
-      setShowResultsPopup(true);
-      interstitialAd.load(); // Yeni reklam yükle
+      console.log('[AD] Interstitial ad closed.');
       setIsAdLoaded(false);
+      setIsAdLoading(true);
+      // Reklam kapandığında pop-up'ı aç
+      setShowResultsPopup(true);
+      // Yeni bir reklam yükle
+      setTimeout(() => {
+        console.log('[AD] Loading new interstitial ad after close...');
+        interstitialAd.load();
+      }, 1000);
     });
 
-    console.log('Loading interstitial ad...');
-    interstitialAd.load();
+    const unsubscribeOpened = interstitialAd.addAdEventListener(AdEventType.OPENED, () => {
+      console.log('[AD] Interstitial ad opened.');
+    });
+
+    // İlk reklam yüklemesi
+    if (!isAdLoading && !isAdLoaded) {
+      console.log('[AD] Initial loading of interstitial ad...');
+      setIsAdLoading(true);
+      interstitialAd.load();
+    }
 
     return () => {
       unsubscribeLoaded();
       unsubscribeError();
       unsubscribeClosed();
+      unsubscribeOpened();
     };
-  }, [interstitialAd]);
+  }, []); // Bağımlılık dizisi boş, sadece bir kez çalışır
 
   const formatBreedName = (breed) => {
     if (!breed) return '';
@@ -475,7 +496,7 @@ const CombinedAnalysisApp = () => {
       setFaceResults(result);
       return result;
     } catch (err) {
-      console.error('Face Analysis Error:', err);
+      console.error('[ANALYSIS] Face Analysis Error:', err);
       setError(translations[language].faceBackendError + err.message);
       return null;
     } finally {
@@ -539,7 +560,7 @@ const CombinedAnalysisApp = () => {
       setPetResults(result);
       return result;
     } catch (err) {
-      console.error('Pet Analysis Error:', err);
+      console.error('[ANALYSIS] Pet Analysis Error:', err);
       setError(translations[language].petBackendError + err.message);
       return null;
     }
@@ -579,13 +600,21 @@ const CombinedAnalysisApp = () => {
         animationTimer.current = requestAnimationFrame(animate);
       } else {
         setIsAnalyzing(false);
-        console.log('Analysis complete. Ad loaded:', isAdLoaded);
-        if (isAdLoaded) {
-          console.log('Showing interstitial ad...');
-          interstitialAd.show();
+        console.log('[ANALYSIS] Analysis completed. Checking ad status...');
+
+        if (isAdLoaded && !isAdLoading) {
+          console.log('[AD] Showing interstitial ad...');
+          try {
+            interstitialAdRef.current.show();
+          } catch (adError) {
+            console.error('[AD] Error showing ad:', adError);
+            setShowResultsPopup(true);
+          }
         } else {
-          console.log('Ad not loaded, showing ResultsPopup directly');
-          setShowResultsPopup(true);
+          console.log('[AD] Ad not loaded or still loading, showing ResultsPopup after 5s timeout...');
+          setTimeout(() => {
+            setShowResultsPopup(true);
+          }, 5000); // 5 saniye bekle
         }
       }
     };
@@ -1372,13 +1401,17 @@ const CombinedAnalysisApp = () => {
         </View>
         <ResultsPopup
           visible={showResultsPopup}
-          onClose={() => setShowResultsPopup(false)}
+          onClose={() => {
+            console.log('Closing ResultsPopup');
+            setShowResultsPopup(false);
+          }}
           compatibilityScore={compatibility?.score}
           details={compatibility?.details}
           petImage={petImage}
           faceImage={faceImage}
           petBreed={petResults?.predicted_label}
           onSeeMoreDetails={() => {
+            console.log('Navigating to detailed results');
             setShowResultsPopup(false);
             setCurrentStep(4);
           }}

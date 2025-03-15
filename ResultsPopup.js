@@ -16,7 +16,6 @@ const ResultsPopup = ({
   translations,
   language
 }) => {
-  // Skora göre renk belirleme
   const getScoreColor = (score) => {
     if (score < 45) return '#FF0000';
     if (score < 60) return '#FFFF00';
@@ -25,20 +24,17 @@ const ResultsPopup = ({
     return '#2ECC71';
   };
 
-  // Detayları formatlama (kısaltılmış başlıklar)
   const formattedDetails = details ? details.map(detail => ({
     title: detail.title[language]?.replace(' Compatibility', ''),
     score: detail.score
   })) : [];
 
-  // Irk adını biçimlendirme
   const formatBreedName = (breed) => {
     if (!breed) return '';
     const breedPart = breed.split('-')[1] || breed;
     return breedPart.charAt(0).toUpperCase() + breedPart.slice(1).toLowerCase().replace(/_/g, ' ');
   };
 
-  // Progress bar render fonksiyonu (skora göre % olarak)
   const renderProgressBar = (score, color) => {
     return (
       <View style={styles.progressBarContainer}>
@@ -46,7 +42,7 @@ const ResultsPopup = ({
           style={[
             styles.progressBar,
             { 
-              width: `${score}%`, // Skora göre direkt % olarak
+              width: `${score}%`,
               backgroundColor: color
             }
           ]} 
@@ -55,11 +51,10 @@ const ResultsPopup = ({
     );
   };
 
-  // Kategori render fonksiyonu
   const renderCategory = (title, score, index) => {
     let displayTitle = title;
     if (title && title.includes(' and ')) {
-      displayTitle = title.split(' and ')[0]; // Çok satırlı başlıklar için kısaltma
+      displayTitle = title.split(' and ')[0];
     }
     
     return (
@@ -79,16 +74,17 @@ const ResultsPopup = ({
       transparent={true}
       animationType="fade"
       onRequestClose={() => {
+        console.log('Modal onRequestClose triggered');
         onClose();
         onSeeMoreDetails();
       }}
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity 
               onPress={() => {
+                console.log('Close button pressed in ResultsPopup');
                 onClose();
                 onSeeMoreDetails();
               }} 
@@ -100,7 +96,6 @@ const ResultsPopup = ({
             <View style={styles.placeholderRight} />
           </View>
 
-          {/* Pet ve Face Resimleri */}
           <View style={styles.imagesContainer}>
             <View style={styles.imageWithLabel}>
               <Image 
@@ -120,7 +115,6 @@ const ResultsPopup = ({
             </View>
           </View>
 
-          {/* Overall Score */}
           <View style={styles.overallScoreSection}>
             <Text style={styles.overallTitle}>{translations[language].overallScore || 'Overall'}</Text>
             <Text style={[styles.overallScoreValue, { color: getScoreColor(compatibilityScore) }]}>
@@ -129,7 +123,6 @@ const ResultsPopup = ({
             {renderProgressBar(compatibilityScore || 0, getScoreColor(compatibilityScore))}
           </View>
 
-          {/* Kategori Skorları */}
           <View style={styles.categoriesGrid}>
             <View style={styles.categoryRow}>
               {formattedDetails.length > 0 && (
@@ -157,8 +150,10 @@ const ResultsPopup = ({
             </View>
           </View>
 
-          {/* Action Button */}
-          <TouchableOpacity style={styles.actionButton} onPress={onSeeMoreDetails}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => {
+            console.log('See More Details button pressed');
+            onSeeMoreDetails();
+          }}>
             <Text style={styles.actionButtonText}>{translations[language].seeMoreDetails || 'See More Details'}</Text>
           </TouchableOpacity>
         </View>
@@ -266,7 +261,7 @@ const styles = StyleSheet.create({
   categorySection: {
     alignItems: 'center',
     width: '100%',
-    height: Platform.OS === 'ios' ? 85 : 'auto', // Sabit yükseklik iOS için
+    height: Platform.OS === 'ios' ? 85 : 'auto',
     marginBottom: 10,
     justifyContent: 'center',
   },
