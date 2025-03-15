@@ -3,7 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Allow access to your photo library for analysis</string>
+	<string>We need access to your photo library to upload images.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera to take photos of your pet or yourself.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need to save photos to your library when you take a picture.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
@@ -28,14 +32,6 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to take photos of your pet or yourself.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photo library to upload images.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>We need to save photos to your library when you take a picture.</string>
-	
-	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSAllowsLocalNetworking</key>

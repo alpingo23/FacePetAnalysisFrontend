@@ -1,9 +1,24 @@
-// FacePetAnalysis/App.js
-
 import React, { useRef, useState, useEffect } from 'react';
 import axios from 'axios';
 import calculateCompatibilityScore from './CompatibilityScore.js';
-import { PermissionsAndroid, Linking, View, Text, Image, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Dimensions, StyleSheet, Platform, Modal } from 'react-native';
+import {
+  PermissionsAndroid,
+  Linking,
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Dimensions,
+  StyleSheet,
+  Platform,
+  Modal,
+  AppState,
+  StatusBar,
+  SafeAreaView,
+} from 'react-native';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import translations from './translations.json';
@@ -14,7 +29,7 @@ import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 // Screen width for responsive design
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// Define COLORS and SHADOWS at the top level
+// Define COLORS and SHADOWS
 const COLORS = {
   light: {
     primary: '#6C63FF',
@@ -102,19 +117,31 @@ const CombinedAnalysisApp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [language, setLanguage] = useState('uk');
   const [showResultsPopup, setShowResultsPopup] = useState(false);
-  const [theme, setTheme] = useState('light'); // State for theme mode
+  const [theme, setTheme] = useState('light');
 
   const animationTimer = useRef(null);
   const blinkInterval = useRef(null);
 
   useEffect(() => {
     blinkInterval.current = setInterval(() => {
-      setIsLVisible(prev => !prev);
+      setIsLVisible((prev) => !prev);
     }, 500);
+
+    const handleAppStateChange = (nextAppState) => {
+      console.log('AppState changed to:', nextAppState);
+      if (nextAppState === 'active') {
+        console.log('App returned to foreground');
+      } else if (nextAppState === 'background') {
+        console.log('App went to background');
+      }
+    };
+
+    AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
       if (blinkInterval.current) clearInterval(blinkInterval.current);
       if (animationTimer.current) cancelAnimationFrame(animationTimer.current);
+      AppState.removeEventListener('change', handleAppStateChange);
     };
   }, []);
 
@@ -129,6 +156,7 @@ const CombinedAnalysisApp = () => {
       if (Platform.OS === 'android') {
         const permission = PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES;
         const granted = await PermissionsAndroid.check(permission);
+        console.log('Android: Gallery permission check:', granted);
         if (granted) return true;
 
         const result = await PermissionsAndroid.request(permission, {
@@ -138,6 +166,7 @@ const CombinedAnalysisApp = () => {
           buttonNegative: translations[language].denyButton,
         });
 
+        console.log('Android: Gallery permission request result:', result);
         if (result === PermissionsAndroid.RESULTS.GRANTED) return true;
         else {
           Alert.alert(
@@ -150,32 +179,64 @@ const CombinedAnalysisApp = () => {
           );
           return false;
         }
+      } else if (Platform.OS === 'ios') {
+        const permissionStatus = await check(PERMISSIONS.IOS.PHOTO_LIBRARY);
+        console.log('iOS: Gallery permission status:', permissionStatus);
+
+        if (permissionStatus === RESULTS.GRANTED) {
+          console.log('iOS: Gallery permission already granted');
+          return true;
+        }
+
+        if (permissionStatus === RESULTS.DENIED) {
+          const result = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
+          console.log('iOS: Gallery permission request result:', result);
+          if (result === RESULTS.GRANTED) return true;
+        }
+
+        console.log('iOS: Gallery permission denied or unavailable');
+        Alert.alert(
+          translations[language].permissionDeniedTitle,
+          translations[language].permissionDeniedMessage,
+          [
+            { text: translations[language].goToSettingsButton, onPress: () => Linking.openSettings() },
+            { text: translations[language].cancelButton, style: 'cancel' },
+          ]
+        );
+        return false;
       }
       return true;
     } catch (err) {
+      console.error('Gallery permission error:', err);
       setError(translations[language].galleryPermissionError + err.message);
       return false;
     }
   };
-
-
 
   const requestCameraPermission = async () => {
     try {
       if (Platform.OS === 'android') {
         const permission = PermissionsAndroid.PERMISSIONS.CAMERA;
         const granted = await PermissionsAndroid.check(permission);
-        if (granted) return true;
-  
+        console.log('Android: Camera permission check:', granted);
+        if (granted) {
+          console.log('Android: Camera permission already granted');
+          return true;
+        }
+
         const result = await PermissionsAndroid.request(permission, {
           title: translations[language].cameraPermissionTitle,
           message: translations[language].cameraPermissionMessage,
           buttonPositive: translations[language].allowButton,
           buttonNegative: translations[language].denyButton,
         });
-  
-        if (result === PermissionsAndroid.RESULTS.GRANTED) return true;
-        else {
+
+        console.log('Android: Camera permission request result:', result);
+        if (result === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('Android: Camera permission granted');
+          return true;
+        } else {
+          console.log('Android: Camera permission denied');
           Alert.alert(
             translations[language].permissionDeniedTitle,
             translations[language].permissionDeniedMessageCamera,
@@ -187,13 +248,24 @@ const CombinedAnalysisApp = () => {
           return false;
         }
       } else if (Platform.OS === 'ios') {
-        // iOS için kamera izni kontrolü
         const permissionStatus = await check(PERMISSIONS.IOS.CAMERA);
-        if (permissionStatus === RESULTS.GRANTED) return true;
-  
-        const result = await request(PERMISSIONS.IOS.CAMERA);
-        if (result === RESULTS.GRANTED) return true;
-  
+        console.log('iOS: Camera permission status:', permissionStatus);
+
+        if (permissionStatus === RESULTS.GRANTED) {
+          console.log('iOS: Camera permission already granted');
+          return true;
+        }
+
+        if (permissionStatus === RESULTS.DENIED) {
+          const result = await request(PERMISSIONS.IOS.CAMERA);
+          console.log('iOS: Camera permission request result:', result);
+          if (result === RESULTS.GRANTED) {
+            console.log('iOS: Camera permission granted');
+            return true;
+          }
+        }
+
+        console.log('iOS: Camera permission denied or unavailable');
         Alert.alert(
           translations[language].permissionDeniedTitle,
           translations[language].permissionDeniedMessageCamera,
@@ -206,6 +278,7 @@ const CombinedAnalysisApp = () => {
       }
       return true;
     } catch (err) {
+      console.error('Camera permission error:', err);
       setError(translations[language].cameraPermissionError + err.message);
       return false;
     }
@@ -213,17 +286,34 @@ const CombinedAnalysisApp = () => {
 
   const handlePetUpload = async () => {
     const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) return;
+    if (!hasPermission) {
+      console.log('Pet Upload: Permission denied, aborting');
+      return;
+    }
 
     const options = { mediaType: 'photo', includeBase64: true };
+    console.log('Pet Upload: Launching image library with options:', options);
+
     launchImageLibrary(options, (response) => {
-      if (response.didCancel) return;
+      console.log('Pet Upload: Image library response:', response);
+      if (response.didCancel) {
+        console.log('Pet Upload: User cancelled image picker');
+        return;
+      }
       if (response.errorCode) {
-        setError(translations[language].imagePickerError + response.errorMessage);
+        console.error('Pet Upload: Error code:', response.errorCode, 'Message:', response.errorMessage);
+        setError(translations[language].imagePickerError + (response.errorMessage || 'Unknown error'));
         return;
       }
       if (response.assets && response.assets.length > 0) {
         const asset = response.assets[0];
+        console.log('Pet Upload: Asset received:', {
+          uri: asset.uri,
+          type: asset.type,
+          fileName: asset.fileName,
+          width: asset.width,
+          height: asset.height,
+        });
         setPetFile({
           uri: asset.uri,
           type: asset.type || 'image/jpeg',
@@ -235,23 +325,43 @@ const CombinedAnalysisApp = () => {
         setPetImage(petImageData);
         setPetImageSize({ width: asset.width, height: asset.height });
         setError(null);
+      } else {
+        console.log('Pet Upload: No assets returned');
+        setError(translations[language].imagePickerError + 'No image selected.');
       }
     });
   };
 
   const handleFaceUpload = async () => {
     const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) return;
+    if (!hasPermission) {
+      console.log('Face Upload: Permission denied, aborting');
+      return;
+    }
 
     const options = { mediaType: 'photo', includeBase64: true };
+    console.log('Face Upload: Launching image library with options:', options);
+
     launchImageLibrary(options, (response) => {
-      if (response.didCancel) return;
+      console.log('Face Upload: Image library response:', response);
+      if (response.didCancel) {
+        console.log('Face Upload: User cancelled image picker');
+        return;
+      }
       if (response.errorCode) {
-        setError(translations[language].imagePickerError + response.errorMessage);
+        console.error('Face Upload: Error code:', response.errorCode, 'Message:', response.errorMessage);
+        setError(translations[language].imagePickerError + (response.errorMessage || 'Unknown error'));
         return;
       }
       if (response.assets && response.assets.length > 0) {
         const asset = response.assets[0];
+        console.log('Face Upload: Asset received:', {
+          uri: asset.uri,
+          type: asset.type,
+          fileName: asset.fileName,
+          width: asset.width,
+          height: asset.height,
+        });
         setFaceFile({
           uri: asset.uri,
           type: asset.type || 'image/jpeg',
@@ -263,28 +373,45 @@ const CombinedAnalysisApp = () => {
         setFaceImage(faceImageData);
         setFaceImageSize({ width: asset.width, height: asset.height });
         setError(null);
+      } else {
+        console.log('Face Upload: No assets returned');
+        setError(translations[language].imagePickerError + 'No image selected.');
       }
     });
   };
 
   const handlePetCamera = async () => {
     const hasPermission = await requestCameraPermission();
-    if (!hasPermission) return;
-  
-    const options = { mediaType: 'photo', includeBase64: true, saveToPhotos: true };
+    if (!hasPermission) {
+      console.log('Pet Camera: Permission denied, aborting');
+      return;
+    }
+
+    const options = { mediaType: 'photo', includeBase64: true };
+    console.log('Pet Camera: Launching camera with options:', options);
+
     launchCamera(options, (response) => {
+      console.log('Pet Camera: Camera response:', response);
+
       if (response.didCancel) {
-        console.log('Kullanıcı kamera işlemini iptal etti');
+        console.log('Pet Camera: User cancelled camera');
         return;
       }
       if (response.errorCode) {
-        const errorMessage = response.errorMessage || 'Bilinmeyen bir hata oluştu';
+        const errorMessage = response.errorMessage || 'Unknown error';
+        console.error('Pet Camera: Error code:', response.errorCode, 'Message:', errorMessage);
         setError(translations[language].cameraError + errorMessage);
-        console.log('Kamera Hatası:', response.errorCode, errorMessage);
         return;
       }
       if (response.assets && response.assets.length > 0) {
         const asset = response.assets[0];
+        console.log('Pet Camera: Asset received:', {
+          uri: asset.uri,
+          type: asset.type,
+          fileName: asset.fileName,
+          width: asset.width,
+          height: asset.height,
+        });
         setPetFile({
           uri: asset.uri,
           type: asset.type || 'image/jpeg',
@@ -297,29 +424,44 @@ const CombinedAnalysisApp = () => {
         setPetImageSize({ width: asset.width, height: asset.height });
         setError(null);
       } else {
-        setError(translations[language].cameraError + 'Fotoğraf çekilemedi.');
+        console.log('Pet Camera: No assets returned');
+        setError(translations[language].cameraError + 'No photo captured.');
       }
     });
   };
-  
+
   const handleFaceCamera = async () => {
     const hasPermission = await requestCameraPermission();
-    if (!hasPermission) return;
-  
-    const options = { mediaType: 'photo', includeBase64: true, saveToPhotos: true };
+    if (!hasPermission) {
+      console.log('Face Camera: Permission denied, aborting');
+      return;
+    }
+
+    const options = { mediaType: 'photo', includeBase64: true };
+    console.log('Face Camera: Launching camera with options:', options);
+
     launchCamera(options, (response) => {
+      console.log('Face Camera: Camera response:', response);
+
       if (response.didCancel) {
-        console.log('Kullanıcı kamera işlemini iptal etti');
+        console.log('Face Camera: User cancelled camera');
         return;
       }
       if (response.errorCode) {
-        const errorMessage = response.errorMessage || 'Bilinmeyen bir hata oluştu';
+        const errorMessage = response.errorMessage || 'Unknown error';
+        console.error('Face Camera: Error code:', response.errorCode, 'Message:', errorMessage);
         setError(translations[language].cameraError + errorMessage);
-        console.log('Kamera Hatası:', response.errorCode, errorMessage);
         return;
       }
       if (response.assets && response.assets.length > 0) {
         const asset = response.assets[0];
+        console.log('Face Camera: Asset received:', {
+          uri: asset.uri,
+          type: asset.type,
+          fileName: asset.fileName,
+          width: asset.width,
+          height: asset.height,
+        });
         setFaceFile({
           uri: asset.uri,
           type: asset.type || 'image/jpeg',
@@ -332,7 +474,8 @@ const CombinedAnalysisApp = () => {
         setFaceImageSize({ width: asset.width, height: asset.height });
         setError(null);
       } else {
-        setError(translations[language].cameraError + 'Fotoğraf çekilemedi.');
+        console.log('Face Camera: No assets returned');
+        setError(translations[language].cameraError + 'No photo captured.');
       }
     });
   };
@@ -340,6 +483,7 @@ const CombinedAnalysisApp = () => {
   const analyzeFace = async () => {
     if (!faceImage || !faceFile) {
       setError(translations[language].errorFaceImageNotLoaded);
+      console.log('Face Analysis: No image loaded');
       return null;
     }
 
@@ -352,9 +496,12 @@ const CombinedAnalysisApp = () => {
         name: faceFile.name,
       });
 
-      const res = await axios.post('http://172.17.16.156:5001/predict_face', formData, {
+      console.log('Face Analysis: Sending request to backend');
+      const res = await axios.post('https://face-analysis-backend-3c9a9754c4c7.herokuapp.com/predict_face', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+
+      console.log('Face Analysis: Backend response:', res.data);
 
       const imageWidth = res.data.imageDimensions?.width || faceFile.width || 452;
       const imageHeight = res.data.imageDimensions?.height || faceFile.height || 678;
@@ -379,7 +526,7 @@ const CombinedAnalysisApp = () => {
       const scaleX = renderedWidth / imageWidth;
       const scaleY = renderedHeight / imageHeight;
 
-      const scaledLandmarks = res.data.landmarks.map(lm => ({
+      const scaledLandmarks = res.data.landmarks.map((lm) => ({
         x: lm.x * scaleX + offsetX,
         y: lm.y * scaleY + offsetY,
       }));
@@ -391,18 +538,21 @@ const CombinedAnalysisApp = () => {
         height: res.data.detection.box.height * scaleY,
       };
 
-      const result = [{
-        age: res.data.age,
-        gender: res.data.gender,
-        genderProbability: res.data.genderProbability,
-        expressions: res.data.expressions,
-        detection: { box: scaledDetectionBox },
-        landmarks: scaledLandmarks,
-      }];
+      const result = [
+        {
+          age: res.data.age,
+          gender: res.data.gender,
+          genderProbability: res.data.genderProbability,
+          expressions: res.data.expressions,
+          detection: { box: scaledDetectionBox },
+          landmarks: scaledLandmarks,
+        },
+      ];
 
       setFaceResults(result);
       return result;
     } catch (err) {
+      console.error('Face Analysis: Error:', err);
       setError(translations[language].faceBackendError + err.message);
       return null;
     } finally {
@@ -413,6 +563,7 @@ const CombinedAnalysisApp = () => {
   const analyzePet = async () => {
     if (!petImage || !petFile) {
       setError(translations[language].errorPetImageNotLoaded);
+      console.log('Pet Analysis: No image loaded');
       return null;
     }
 
@@ -424,9 +575,12 @@ const CombinedAnalysisApp = () => {
         name: petFile.name,
       });
 
-      const res = await axios.post('http://172.17.16.156:5002/predict_pet', formData, {
+      console.log('Pet Analysis: Sending request to backend');
+      const res = await axios.post('https://pet-analysis-backend-1546ecd6728b.herokuapp.com/predict_pet', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+
+      console.log('Pet Analysis: Backend response:', res.data);
 
       const imageWidth = petFile.width || 1000;
       const imageHeight = petFile.height || 700;
@@ -466,6 +620,7 @@ const CombinedAnalysisApp = () => {
       setPetResults(result);
       return result;
     } catch (err) {
+      console.error('Pet Analysis: Error:', err);
       setError(translations[language].petBackendError + err.message);
       return null;
     }
@@ -474,10 +629,12 @@ const CombinedAnalysisApp = () => {
   const startAnalysis = async () => {
     if (!petImage) {
       setError(translations[language].errorUploadPetImage);
+      console.log('Start Analysis: No pet image uploaded');
       return;
     }
     if (!faceImage) {
       setError(translations[language].errorUploadFaceImage);
+      console.log('Start Analysis: No face image uploaded');
       return;
     }
 
@@ -490,6 +647,7 @@ const CombinedAnalysisApp = () => {
     if (!faceDetections || !petResult) {
       setIsAnalyzing(false);
       setCurrentStep(2);
+      console.log('Start Analysis: Analysis failed');
       return;
     }
 
@@ -527,6 +685,7 @@ const CombinedAnalysisApp = () => {
     setFaceImageSize({ width: 324, height: 324 });
     setShowResultsPopup(false);
     if (animationTimer.current) cancelAnimationFrame(animationTimer.current);
+    console.log('Analysis reset');
   };
 
   const connectFaceFeatures = (landmarks) => {
@@ -542,13 +701,14 @@ const CombinedAnalysisApp = () => {
     const bottomLip = landmarks.slice(60, 68);
 
     const getNearestPoints = (point, allPoints, maxConnections = 6, excludeIndices = []) => {
-      const distances = allPoints.map((p, i) => ({
-        index: i,
-        distance: Math.sqrt(Math.pow(point.x - p.x, 2) + Math.pow(point.y - p.y, 2)),
-      }))
-        .filter(d => !excludeIndices.includes(d.index))
+      const distances = allPoints
+        .map((p, i) => ({
+          index: i,
+          distance: Math.sqrt(Math.pow(point.x - p.x, 2) + Math.pow(point.y - p.y, 2)),
+        }))
+        .filter((d) => !excludeIndices.includes(d.index))
         .sort((a, b) => a.distance - b.distance);
-      return distances.slice(0, maxConnections).map(d => d.index);
+      return distances.slice(0, maxConnections).map((d) => d.index);
     };
 
     for (let i = 0; i < chin.length - 1; i++) lines.push([chin[i], chin[i + 1], COLORS[theme].landmarkColors.default]);
@@ -594,7 +754,7 @@ const CombinedAnalysisApp = () => {
       const neededConnections = Math.max(0, 6 - currentConnections);
       if (neededConnections > 0) {
         const nearestIndices = getNearestPoints(point, landmarks, neededConnections, [index, ...connectedIndices]);
-        nearestIndices.forEach(nearestIndex => {
+        nearestIndices.forEach((nearestIndex) => {
           lines.push([point, landmarks[nearestIndex], COLORS[theme].landmarkColors.default]);
         });
       }
@@ -629,20 +789,19 @@ const CombinedAnalysisApp = () => {
     return lines;
   };
 
-  // Updated renderPetUploadStep with smaller side-by-side buttons and smaller image
   const renderPetUploadStep = () => (
     <View style={getStyles().stepContainer}>
       <Text style={getStyles().stepTitle}>{translations[language].step1Title}</Text>
       <View style={getStyles().uploadContainer}>
         <View style={getStyles().buttonRow}>
-          <TouchableOpacity 
-            onPress={handlePetUpload} 
+          <TouchableOpacity
+            onPress={handlePetUpload}
             style={[getStyles().actionButton, { backgroundColor: COLORS[theme].primary }]}
           >
             <Text style={getStyles().actionButtonText}>{translations[language].uploadPetButton}</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={handlePetCamera} 
+          <TouchableOpacity
+            onPress={handlePetCamera}
             style={[getStyles().actionButton, { backgroundColor: COLORS[theme].teal }]}
           >
             <Text style={getStyles().actionButtonText}>{translations[language].takePetPictureButton}</Text>
@@ -663,21 +822,20 @@ const CombinedAnalysisApp = () => {
       {error && <Text style={getStyles().errorText}>{error}</Text>}
     </View>
   );
-  
-  // Updated renderFaceUploadStep with fixed button styles
+
   const renderFaceUploadStep = () => (
     <View style={getStyles().stepContainer}>
       <Text style={getStyles().stepTitle}>{translations[language].step2Title}</Text>
       <View style={getStyles().uploadContainer}>
         <View style={getStyles().buttonRow}>
-          <TouchableOpacity 
-            onPress={handleFaceUpload} 
+          <TouchableOpacity
+            onPress={handleFaceUpload}
             style={[getStyles().actionButton, { backgroundColor: COLORS[theme].primary }]}
           >
             <Text style={getStyles().actionButtonText}>{translations[language].uploadFaceButton}</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={handleFaceCamera} 
+          <TouchableOpacity
+            onPress={handleFaceCamera}
             style={[getStyles().actionButton, { backgroundColor: COLORS[theme].teal }]}
           >
             <Text style={getStyles().actionButtonText}>{translations[language].takeSelfieButton}</Text>
@@ -714,7 +872,6 @@ const CombinedAnalysisApp = () => {
         <Text style={getStyles().progressText}>{analysisProgress}% Complete</Text>
       </View>
       <View style={getStyles().analysisContainer}>
-        {/* Face Analysis Item - Now First */}
         <View style={getStyles().analysisItem}>
           <Text style={getStyles().analysisTitle}>{translations[language].faceAnalysisTitle}</Text>
           {faceImage ? (
@@ -731,25 +888,41 @@ const CombinedAnalysisApp = () => {
                   {isLVisible && (
                     <>
                       <Path
-                        d={`M${faceResults[0].detection.box.x},${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x - 22},${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x - 22},${faceResults[0].detection.box.y + 22}`}
+                        d={`M${faceResults[0].detection.box.x},${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x - 22},${
+                          faceResults[0].detection.box.y
+                        } L${faceResults[0].detection.box.x - 22},${faceResults[0].detection.box.y + 22}`}
                         fill="none"
                         stroke="#ff3333"
                         strokeWidth="3"
                       />
                       <Path
-                        d={`M${faceResults[0].detection.box.x + faceResults[0].detection.box.width},${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${faceResults[0].detection.box.y + 22}`}
+                        d={`M${faceResults[0].detection.box.x + faceResults[0].detection.box.width},${faceResults[0].detection.box.y} L${
+                          faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22
+                        },${faceResults[0].detection.box.y} L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${
+                          faceResults[0].detection.box.y + 22
+                        }`}
                         fill="none"
                         stroke="#ff3333"
                         strokeWidth="3"
                       />
                       <Path
-                        d={`M${faceResults[0].detection.box.x},${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${faceResults[0].detection.box.x - 22},${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${faceResults[0].detection.box.x - 22},${faceResults[0].detection.box.y + faceResults[0].detection.box.height - 22}`}
+                        d={`M${faceResults[0].detection.box.x},${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${
+                          faceResults[0].detection.box.x - 22
+                        },${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${faceResults[0].detection.box.x - 22},${
+                          faceResults[0].detection.box.y + faceResults[0].detection.box.height - 22
+                        }`}
                         fill="none"
                         stroke="#ff3333"
                         strokeWidth="3"
                       />
                       <Path
-                        d={`M${faceResults[0].detection.box.x + faceResults[0].detection.box.width},${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${faceResults[0].detection.box.y + faceResults[0].detection.box.height} L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${faceResults[0].detection.box.y + faceResults[0].detection.box.height - 22}`}
+                        d={`M${faceResults[0].detection.box.x + faceResults[0].detection.box.width},${
+                          faceResults[0].detection.box.y + faceResults[0].detection.box.height
+                        } L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${
+                          faceResults[0].detection.box.y + faceResults[0].detection.box.height
+                        } L${faceResults[0].detection.box.x + faceResults[0].detection.box.width + 22},${
+                          faceResults[0].detection.box.y + faceResults[0].detection.box.height - 22
+                        }`}
                         fill="none"
                         stroke="#ff3333"
                         strokeWidth="3"
@@ -767,20 +940,21 @@ const CombinedAnalysisApp = () => {
                       strokeWidth="1"
                     />
                   ))}
-                  {faceResults[0].landmarks.length >= 68 && connectFaceFeatures(faceResults[0].landmarks).map((line, index) => {
-                    const [p1, p2, strokeColor] = line;
-                    return (
-                      <Line
-                        key={`line-${index}`}
-                        x1={p1.x}
-                        y1={p1.y}
-                        x2={p2.x}
-                        y2={p2.y}
-                        stroke={strokeColor}
-                        strokeWidth="0.5"
-                      />
-                    );
-                  })}
+                  {faceResults[0].landmarks.length >= 68 &&
+                    connectFaceFeatures(faceResults[0].landmarks).map((line, index) => {
+                      const [p1, p2, strokeColor] = line;
+                      return (
+                        <Line
+                          key={`line-${index}`}
+                          x1={p1.x}
+                          y1={p1.y}
+                          x2={p2.x}
+                          y2={p2.y}
+                          stroke={strokeColor}
+                          strokeWidth="0.5"
+                        />
+                      );
+                    })}
                 </Svg>
               )}
             </View>
@@ -788,8 +962,6 @@ const CombinedAnalysisApp = () => {
             <Text style={getStyles().errorText}>{translations[language].errorFaceImageNotAvailable}</Text>
           )}
         </View>
-        
-        {/* Pet Analysis Item - Now Second */}
         <View style={getStyles().analysisItem}>
           <Text style={getStyles().analysisTitle}>{translations[language].petAnalysisTitle}</Text>
           {petImage ? (
@@ -819,64 +991,42 @@ const CombinedAnalysisApp = () => {
 
   const renderResultsStep = () => (
     <ScrollView style={getStyles().stepContainer} showsVerticalScrollIndicator={false}>
-      {/* Compatibility Score Card */}
       <View style={getStyles().compatibilityCard}>
         <Text style={getStyles().compatibilityTitle}>{translations[language].compatibilityScoreLabel}</Text>
         <View style={getStyles().compatibilityScoreContainer}>
-          <Image 
-            source={{ uri: petImage }} 
-            style={getStyles().compatibilityImage} 
-            resizeMode="cover" 
-          />
+          <Image source={{ uri: petImage }} style={getStyles().compatibilityImage} resizeMode="cover" />
           <Text style={[getStyles().compatibilityScoreText, { color: getScoreColor(compatibility?.score) }]}>
             {compatibility?.score || 0}/100
           </Text>
-          <Image 
-            source={{ uri: faceImage }} 
-            style={getStyles().compatibilityImage} 
-            resizeMode="cover" 
-          />
+          <Image source={{ uri: faceImage }} style={getStyles().compatibilityImage} resizeMode="cover" />
         </View>
         <Text style={getStyles().compatibilityMessage}>
-          {compatibility?.message[language]?.replace(
-            petResults?.predicted_label, 
-            formatBreedName(petResults?.predicted_label)
-          ) || `${translations[language].compatibilityMessagePrefix} ${formatBreedName(petResults?.predicted_label)} ${translations[language].compatibilityMessageSuffix}`}
+          {compatibility?.message[language]?.replace(petResults?.predicted_label, formatBreedName(petResults?.predicted_label)) ||
+            `${translations[language].compatibilityMessagePrefix} ${formatBreedName(petResults?.predicted_label)} ${
+              translations[language].compatibilityMessageSuffix
+            }`}
         </Text>
       </View>
 
-      {/* Detail Score Cards */}
-      {compatibility && compatibility.details.map((detail, index) => (
-        <View key={index} style={getStyles().detailCard}>
-          <View style={getStyles().detailCardHeader}>
-            <Text style={getStyles().detailCardTitle}>{detail.title[language]}</Text>
-            <Text style={[getStyles().detailCardScore, { color: getScoreColor(detail.score) }]}>
-              {detail.score}/100
-            </Text>
+      {compatibility &&
+        compatibility.details.map((detail, index) => (
+          <View key={index} style={getStyles().detailCard}>
+            <View style={getStyles().detailCardHeader}>
+              <Text style={getStyles().detailCardTitle}>{detail.title[language]}</Text>
+              <Text style={[getStyles().detailCardScore, { color: getScoreColor(detail.score) }]}>{detail.score}/100</Text>
+            </View>
+            <View style={getStyles().progressBarBackground}>
+              <View
+                style={[getStyles().progressBar, { width: `${detail.score}%`, backgroundColor: getScoreColor(detail.score) }]}
+              />
+            </View>
+            <Text style={getStyles().detailCardDescription}>{detail.description[language]}</Text>
           </View>
-          <View style={getStyles().progressBarBackground}>
-            <View 
-              style={[
-                getStyles().progressBar, 
-                { 
-                  width: `${detail.score}%`, 
-                  backgroundColor: getScoreColor(detail.score) 
-                }
-              ]} 
-            />
-          </View>
-          <Text style={getStyles().detailCardDescription}>{detail.description[language]}</Text>
-        </View>
-      ))}
+        ))}
 
-      {/* Pet Information Card */}
       {petResults && (
         <>
-          <Image 
-            source={{ uri: petImage }} 
-            style={getStyles().fullWidthImage} 
-            resizeMode="cover" 
-          />
+          <Image source={{ uri: petImage }} style={getStyles().fullWidthImage} resizeMode="cover" />
           <View style={getStyles().infoCard}>
             <View style={getStyles().infoRow}>
               <Text style={getStyles().infoLabel}>{translations[language].breedLabel}:</Text>
@@ -887,28 +1037,17 @@ const CombinedAnalysisApp = () => {
               <Text style={getStyles().infoValue}>{Math.round(petResults.confidence * 100)}%</Text>
             </View>
             <View style={getStyles().progressBarBackground}>
-              <View 
-                style={[
-                  getStyles().progressBar, 
-                  { 
-                    width: `${petResults.confidence * 100}%`, 
-                    backgroundColor: COLORS[theme].primary 
-                  }
-                ]} 
+              <View
+                style={[getStyles().progressBar, { width: `${petResults.confidence * 100}%`, backgroundColor: COLORS[theme].primary }]}
               />
             </View>
           </View>
         </>
       )}
 
-      {/* Face Information Card */}
       {faceResults && faceResults[0] && (
         <>
-          <Image 
-            source={{ uri: faceImage }} 
-            style={getStyles().fullWidthImage} 
-            resizeMode="cover" 
-          />
+          <Image source={{ uri: faceImage }} style={getStyles().fullWidthImage} resizeMode="cover" />
           <View style={getStyles().infoCard}>
             <View style={getStyles().infoRow}>
               <Text style={getStyles().infoLabel}>{translations[language].ageLabel}:</Text>
@@ -917,16 +1056,18 @@ const CombinedAnalysisApp = () => {
             <View style={getStyles().infoRow}>
               <Text style={getStyles().infoLabel}>{translations[language].genderLabel}:</Text>
               <Text style={getStyles().infoValue}>
-                {translations[language].genders[faceResults[0].gender.toLowerCase()] || faceResults[0].gender.toLowerCase()} ({(faceResults[0].genderProbability * 100).toFixed(1)}%)
+                {translations[language].genders[faceResults[0].gender.toLowerCase()] || faceResults[0].gender.toLowerCase()} (
+                {(faceResults[0].genderProbability * 100).toFixed(1)}%)
               </Text>
             </View>
             <View style={getStyles().infoRow}>
               <Text style={getStyles().infoLabel}>{translations[language].expressionLabel}:</Text>
               <Text style={getStyles().infoValue}>
-                {faceResults[0].expressions ? 
-                  translations[language].expressions[
+                {faceResults[0].expressions
+                  ? translations[language].expressions[
+                      Object.entries(faceResults[0].expressions).sort((a, b) => b[1] - a[1])[0][0]
+                    ] ||
                     Object.entries(faceResults[0].expressions).sort((a, b) => b[1] - a[1])[0][0]
-                  ] || Object.entries(faceResults[0].expressions).sort((a, b) => b[1] - a[1])[0][0]
                   : translations[language].neutralExpression}
               </Text>
             </View>
@@ -934,15 +1075,11 @@ const CombinedAnalysisApp = () => {
         </>
       )}
 
-      {/* Action Buttons */}
       <View style={getStyles().buttonContainer}>
         <TouchableOpacity onPress={resetAnalysis} style={getStyles().greenButton}>
           <Text style={getStyles().buttonText}>{translations[language].newAnalysisButton}</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          onPress={() => setShowResultsPopup(true)} 
-          style={getStyles().redButton}
-        >
+        <TouchableOpacity onPress={() => setShowResultsPopup(true)} style={getStyles().redButton}>
           <Text style={getStyles().buttonText}>{translations[language].backToSummary}</Text>
         </TouchableOpacity>
       </View>
@@ -953,11 +1090,13 @@ const CombinedAnalysisApp = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  // Dynamic styles function
   const getStyles = () => StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: COLORS[theme].light,
+    },
+    safeArea: {
+      flex: 1,
     },
     header: {
       backgroundColor: COLORS[theme].primary,
@@ -991,13 +1130,13 @@ const CombinedAnalysisApp = () => {
       height: 40,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.2)', // Semi-transparent background
-      borderRadius: 8,                             // Rounded corners
-      overflow: 'hidden',                          // Ensures the background stays within the border radius
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: 8,
+      overflow: 'hidden',
     },
     themeToggleText: {
       fontSize: 20,
-      color: COLORS[theme].white,                  // White text in both themes
+      color: COLORS[theme].white,
     },
     placeholder: {
       width: 40,
@@ -1036,7 +1175,7 @@ const CombinedAnalysisApp = () => {
       width: '100%',
     },
     actionButton: {
-      backgroundColor: COLORS[theme].primary, // Color will be overridden by inline style
+      backgroundColor: COLORS[theme].primary,
       paddingVertical: 8,
       paddingHorizontal: 15,
       borderRadius: 25,
@@ -1050,9 +1189,8 @@ const CombinedAnalysisApp = () => {
       fontSize: 14,
       fontWeight: 'bold',
       textAlign: 'center',
-      // Allow text wrapping
-      numberOfLines: 2, // Allow up to 2 lines
-      ellipsizeMode: 'tail', // Truncate at the end if still too long
+      numberOfLines: 2,
+      ellipsizeMode: 'tail',
     },
     continueButton: {
       backgroundColor: COLORS[theme].success,
@@ -1089,13 +1227,6 @@ const CombinedAnalysisApp = () => {
       borderWidth: 3,
       borderColor: COLORS[theme].dark,
     },
-    buttonRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: 20,
-      marginTop: 25,
-      width: '100%',
-    },
     progressContainer: {
       margin: 25,
       width: '90%',
@@ -1107,7 +1238,7 @@ const CombinedAnalysisApp = () => {
       overflow: 'hidden',
     },
     progressBar: {
-      height: '100%',
+      height: '100',
       borderRadius: 10,
     },
     progressText: {
@@ -1170,195 +1301,6 @@ const CombinedAnalysisApp = () => {
       fontSize: 20,
       marginTop: 15,
       fontWeight: 'bold',
-    },
-    resultRow: {
-      marginBottom: 20,
-      width: '100%',
-      paddingTop: 10,
-    },
-    imageScoreWrapper: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      width: '100%',
-      paddingHorizontal: 10,
-    },
-    imageContainerTop: {
-      flex: 1,
-      alignItems: 'center',
-      paddingTop: 20,
-    },
-    scoreContainerTop: {
-      flex: 2,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 10,
-      backgroundColor: COLORS[theme].white,
-      borderRadius: 15,
-      paddingVertical: 10,
-      marginHorizontal: 5,
-      ...SHADOWS.small,
-    },
-    resultHeaderTop: {
-      fontSize: 16,
-      textAlign: 'center',
-      marginBottom: 2,
-      color: COLORS[theme].primary,
-      fontWeight: 'bold',
-    },
-    scoreTextTop: {
-      fontSize: SCREEN_WIDTH * 0.06,
-      fontWeight: 'bold',
-      textAlign: 'center',
-      marginBottom: 5,
-    },
-    resultMessage: {
-      fontSize: 16,
-      textAlign: 'center',
-      lineHeight: 24,
-      color: COLORS[theme].dark,
-    },
-    fullWidthContainer: {
-      width: '100%',
-      paddingHorizontal: 15,
-      marginBottom: 25,
-    },
-    resultCard: {
-      backgroundColor: COLORS[theme].white,
-      borderRadius: 20,
-      marginBottom: 25,
-      padding: 20,
-      ...SHADOWS.medium,
-      width: '100%',
-    },
-    resultDetails: {
-      padding: 15,
-    },
-    resultRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 12,
-      alignItems: 'center',
-    },
-    resultLabel: {
-      fontWeight: 'bold',
-      color: COLORS[theme].dark,
-      fontSize: 16,
-    },
-    resultValue: {
-      fontWeight: 'bold',
-      color: COLORS[theme].primary,
-      fontSize: 16,
-    },
-    resultImage: {
-      borderRadius: 15,
-      marginBottom: 15,
-      borderWidth: 3,
-      borderColor: COLORS[theme].dark,
-      ...SHADOWS.medium,
-    },
-    faceResultItem: {
-      backgroundColor: COLORS[theme].white,
-      borderRadius: 15,
-      padding: 15,
-      marginBottom: 15,
-      ...SHADOWS.small,
-    },
-    errorText: {
-      color: COLORS[theme].danger,
-      textAlign: 'center',
-      fontSize: 16,
-      backgroundColor: 'rgba(242, 95, 92, 0.2)',
-      padding: 10,
-      borderRadius: 10,
-      marginVertical: 10,
-      fontWeight: 'bold',
-    },
-    warningText: {
-      color: COLORS[theme].warning,
-      textAlign: 'center',
-      fontSize: 16,
-      backgroundColor: 'rgba(255, 0, 0, 0.23)',
-      padding: 10,
-      borderRadius: 10,
-      marginVertical: 10,
-      fontStyle: 'italic',
-    },
-    thumbnailImageTop: {
-      width: SCREEN_WIDTH * 0.2,
-      height: SCREEN_WIDTH * 0.2,
-      borderRadius: 15,
-      marginHorizontal: 5,
-      ...SHADOWS.small,
-      borderWidth: 2,
-      borderColor: COLORS[theme].dark,
-    },
-    backToSummaryButton: {
-      backgroundColor: COLORS[theme].primary,
-      borderRadius: 20,
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      alignSelf: 'flex-start',
-      marginBottom: 15,
-      marginTop: 5,
-      ...SHADOWS.small,
-    },
-    backToSummaryText: {
-      color: COLORS[theme].dark,
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
-    detailsContainer: {
-      marginTop: 20,
-      backgroundColor: COLORS[theme].white,
-      borderRadius: 15,
-      padding: 15,
-      ...SHADOWS.small,
-    },
-    detailsHeader: {
-      fontSize: 22,
-      color: COLORS[theme].primary,
-      marginBottom: 20,
-      fontWeight: 'bold',
-      textAlign: 'center',
-    },
-    detailItem: {
-      backgroundColor: COLORS[theme].white,
-      borderRadius: 15,
-      padding: 15,
-      marginBottom: 20,
-      ...SHADOWS.small,
-      borderLeftWidth: 5,
-      borderLeftColor: COLORS[theme].primary,
-    },
-    detailRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 10,
-      alignItems: 'center',
-    },
-    detailTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: COLORS[theme].dark,
-      flex: 1,
-      paddingRight: 10,
-    },
-    detailScore: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      paddingHorizontal: 12,
-      paddingVertical: 5,
-      borderRadius: 10,
-      minWidth: 70,
-      textAlign: 'center',
-    },
-    detailDescription: {
-      fontSize: 14,
-      color: COLORS[theme].dark,
-      lineHeight: 22,
-      marginTop: 12,
-      textAlign: 'left',
     },
     compatibilityCard: {
       backgroundColor: 'rgba(108, 99, 255, 0.2)',
@@ -1486,55 +1428,72 @@ const CombinedAnalysisApp = () => {
       flex: 1,
       marginLeft: 5,
     },
+    errorText: {
+      color: COLORS[theme].danger,
+      textAlign: 'center',
+      fontSize: 16,
+      backgroundColor: 'rgba(242, 95, 92, 0.2)',
+      padding: 10,
+      borderRadius: 10,
+      marginVertical: 10,
+      fontWeight: 'bold',
+    },
+    warningText: {
+      color: COLORS[theme].warning,
+      textAlign: 'center',
+      fontSize: 16,
+      backgroundColor: 'rgba(255, 0, 0, 0.23)',
+      padding: 10,
+      borderRadius: 10,
+      marginVertical: 10,
+      fontStyle: 'italic',
+    },
   });
 
   return (
-    <ScrollView style={getStyles().container}>
-      <View style={getStyles().header}>
-        <View style={getStyles().headerTopRow}>
-          <View style={getStyles().languageWrapper}>
-            <CustomLanguageSelector language={language} setLanguage={setLanguage} />
+    <SafeAreaView style={getStyles().safeArea}>
+      <StatusBar barStyle={theme === 'light' ? 'dark-content' : 'light-content'} backgroundColor={COLORS[theme].primary} />
+      <ScrollView style={getStyles().container}>
+        <View style={getStyles().header}>
+          <View style={getStyles().headerTopRow}>
+            <View style={getStyles().languageWrapper}>
+              <CustomLanguageSelector language={language} setLanguage={setLanguage} />
+            </View>
+            <View style={getStyles().logoContainer}>
+              <Image source={require('./logo.png')} style={getStyles().smallLogo} resizeMode="contain" />
+            </View>
+            <TouchableOpacity onPress={toggleTheme} style={getStyles().themeToggle}>
+              <Text style={getStyles().themeToggleText}>{theme === 'light' ? '🌙' : '☀️'}</Text>
+            </TouchableOpacity>
           </View>
-          <View style={getStyles().logoContainer}>
-            <Image
-              source={require('./logo.png')}
-              style={getStyles().smallLogo}
-              resizeMode="contain"
-            />
-          </View>
-          <TouchableOpacity onPress={toggleTheme} style={getStyles().themeToggle}>
-            <Text style={getStyles().themeToggleText}>{theme === 'light' ? '🌙' : '☀️'}</Text>
-          </TouchableOpacity>
+          <Text style={getStyles().headerTitle}>{translations[language].appTitle}</Text>
         </View>
-        <Text style={getStyles().headerTitle}>{translations[language].appTitle}</Text>
-      </View>
-      <View style={getStyles().main}>
-        {currentStep === 1 && renderPetUploadStep()}
-        {currentStep === 2 && renderFaceUploadStep()}
-        {currentStep === 3 && isAnalyzing && renderAnalysisStep()}
-        {currentStep === 4 && renderResultsStep()}
-      </View>
-      {/* Results Popup */}
-      <ResultsPopup 
-        visible={showResultsPopup}
-        onClose={() => setShowResultsPopup(false)}
-        compatibilityScore={compatibility?.score}
-        details={compatibility?.details}
-        petImage={petImage}
-        faceImage={faceImage}
-        petBreed={petResults?.predicted_label}
-        onSeeMoreDetails={() => {
-          setShowResultsPopup(false);
-          setCurrentStep(4);
-        }}
-        translations={translations}
-        language={language}
-      />
-    </ScrollView>
+        <View style={getStyles().main}>
+          {currentStep === 1 && renderPetUploadStep()}
+          {currentStep === 2 && renderFaceUploadStep()}
+          {currentStep === 3 && isAnalyzing && renderAnalysisStep()}
+          {currentStep === 4 && renderResultsStep()}
+        </View>
+        <ResultsPopup
+          visible={showResultsPopup}
+          onClose={() => setShowResultsPopup(false)}
+          compatibilityScore={compatibility?.score}
+          details={compatibility?.details}
+          petImage={petImage}
+          faceImage={faceImage}
+          petBreed={petResults?.predicted_label}
+          onSeeMoreDetails={() => {
+            setShowResultsPopup(false);
+            setCurrentStep(4);
+          }}
+          translations={translations}
+          language={language}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
-// Score Color Function
 const getScoreColor = (score) => {
   if (score < 45) return '#FF0000';
   if (score < 60) return '#FFFF00';
