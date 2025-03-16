@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import calculateCompatibilityScore from './CompatibilityScore.js';
 import {
@@ -27,6 +27,7 @@ import ResultsPopup from './ResultsPopup';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 import mobileAds from 'react-native-google-mobile-ads';
+import NativeAdBanner from './NativeAdBanner'; // Yeni oluşturduğumuz bileşeni import ediyoruz
 
 // Screen width for responsive design
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -168,7 +169,6 @@ const CombinedAnalysisApp = () => {
       console.log('[AD] Ad failed to load:', error);
       setIsAdLoaded(false);
       setIsAdLoading(false);
-      // Hata durumunda pop-up'ı aç
       setShowResultsPopup(true);
     });
 
@@ -176,20 +176,17 @@ const CombinedAnalysisApp = () => {
       console.log('[AD] Interstitial ad closed.');
       setIsAdLoaded(false);
       setIsAdLoading(true);
-      // Reklam kapandığında pop-up'ı aç
       setShowResultsPopup(true);
-      // Yeni bir reklam yükle
       setTimeout(() => {
         console.log('[AD] Loading new interstitial ad after close...');
         interstitialAd.load();
-      }, 1000);
+      }, 100);
     });
 
     const unsubscribeOpened = interstitialAd.addAdEventListener(AdEventType.OPENED, () => {
       console.log('[AD] Interstitial ad opened.');
     });
 
-    // İlk reklam yüklemesi
     if (!isAdLoading && !isAdLoaded) {
       console.log('[AD] Initial loading of interstitial ad...');
       setIsAdLoading(true);
@@ -202,7 +199,7 @@ const CombinedAnalysisApp = () => {
       unsubscribeClosed();
       unsubscribeOpened();
     };
-  }, []); // Bağımlılık dizisi boş, sadece bir kez çalışır
+  }, []);
 
   const formatBreedName = (breed) => {
     if (!breed) return '';
@@ -614,7 +611,7 @@ const CombinedAnalysisApp = () => {
           console.log('[AD] Ad not loaded or still loading, showing ResultsPopup after 5s timeout...');
           setTimeout(() => {
             setShowResultsPopup(true);
-          }, 5000); // 5 saniye bekle
+          }, 5000);
         }
       }
     };
@@ -1012,6 +1009,8 @@ const CombinedAnalysisApp = () => {
           <Text style={getStyles().buttonText}>{translations[language].backToSummary}</Text>
         </TouchableOpacity>
       </View>
+      {/* Reklam için boşluk bırakıyoruz */}
+      <View style={{ height: 100 }} />
     </ScrollView>
   );
 
@@ -1375,50 +1374,64 @@ const CombinedAnalysisApp = () => {
       },
     });
 
+  const popupProps = useMemo(() => ({
+    visible: showResultsPopup,
+    onClose: () => {
+      console.log('Closing ResultsPopup');
+      setShowResultsPopup(false);
+    },
+    compatibilityScore: compatibility?.score,
+    details: compatibility?.details,
+    petImage,
+    faceImage,
+    petBreed: petResults?.predicted_label,
+    onSeeMoreDetails: () => {
+      console.log('Navigating to detailed results');
+      setShowResultsPopup(false);
+      setCurrentStep(4);
+    },
+    translations,
+    language,
+  }), [
+    showResultsPopup,
+    compatibility?.score,
+    compatibility?.details,
+    petImage,
+    faceImage,
+    petResults?.predicted_label,
+    language,
+  ]);
+
   return (
     <SafeAreaView style={getStyles().safeArea}>
       <StatusBar barStyle={theme === 'light' ? 'dark-content' : 'light-content'} backgroundColor={COLORS[theme].primary} />
-      <ScrollView style={getStyles().container}>
-        <View style={getStyles().header}>
-          <View style={getStyles().headerTopRow}>
-            <View style={getStyles().languageWrapper}>
-              <CustomLanguageSelector language={language} setLanguage={setLanguage} />
+      <View style={{ flex: 1 }}>
+        <ScrollView style={getStyles().container}>
+          <View style={getStyles().header}>
+            <View style={getStyles().headerTopRow}>
+              <View style={getStyles().languageWrapper}>
+                <CustomLanguageSelector language={language} setLanguage={setLanguage} />
+              </View>
+              <View style={getStyles().logoContainer}>
+                <Image source={require('./logo.png')} style={getStyles().smallLogo} resizeMode="contain" />
+              </View>
+              <TouchableOpacity onPress={toggleTheme} style={getStyles().themeToggle}>
+                <Text style={getStyles().themeToggleText}>{theme === 'light' ? '🌙' : '☀️'}</Text>
+              </TouchableOpacity>
             </View>
-            <View style={getStyles().logoContainer}>
-              <Image source={require('./logo.png')} style={getStyles().smallLogo} resizeMode="contain" />
-            </View>
-            <TouchableOpacity onPress={toggleTheme} style={getStyles().themeToggle}>
-              <Text style={getStyles().themeToggleText}>{theme === 'light' ? '🌙' : '☀️'}</Text>
-            </TouchableOpacity>
+            <Text style={getStyles().headerTitle}>{translations[language].appTitle}</Text>
           </View>
-          <Text style={getStyles().headerTitle}>{translations[language].appTitle}</Text>
-        </View>
-        <View style={getStyles().main}>
-          {currentStep === 1 && renderPetUploadStep()}
-          {currentStep === 2 && renderFaceUploadStep()}
-          {currentStep === 3 && isAnalyzing && renderAnalysisStep()}
-          {currentStep === 4 && renderResultsStep()}
-        </View>
-        <ResultsPopup
-          visible={showResultsPopup}
-          onClose={() => {
-            console.log('Closing ResultsPopup');
-            setShowResultsPopup(false);
-          }}
-          compatibilityScore={compatibility?.score}
-          details={compatibility?.details}
-          petImage={petImage}
-          faceImage={faceImage}
-          petBreed={petResults?.predicted_label}
-          onSeeMoreDetails={() => {
-            console.log('Navigating to detailed results');
-            setShowResultsPopup(false);
-            setCurrentStep(4);
-          }}
-          translations={translations}
-          language={language}
-        />
-      </ScrollView>
+          <View style={getStyles().main}>
+            {currentStep === 1 && renderPetUploadStep()}
+            {currentStep === 2 && renderFaceUploadStep()}
+            {currentStep === 3 && isAnalyzing && renderAnalysisStep()}
+            {currentStep === 4 && renderResultsStep()}
+          </View>
+        </ScrollView>
+        {/* Her zaman en altta görünecek NativeAdBanner */}
+        <NativeAdBanner />
+      </View>
+      <ResultsPopup {...popupProps} />
     </SafeAreaView>
   );
 };
