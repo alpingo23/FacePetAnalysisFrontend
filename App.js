@@ -25,9 +25,9 @@ import translations from './translations.json';
 import CustomLanguageSelector from './CustomLanguageSelector';
 import ResultsPopup from './ResultsPopup';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
+import { InterstitialAd, AdEventType, BannerAdSize } from 'react-native-google-mobile-ads';
 import mobileAds from 'react-native-google-mobile-ads';
-import NativeAdBanner from './NativeAdBanner'; // Yeni oluşturduğumuz bileşeni import ediyoruz
+import BannerAdComponent from './BannerAdComponent.js';
 
 // Screen width for responsive design
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -109,6 +109,9 @@ mobileAds()
     console.log('[AD] Google Mobile Ads initialized:', adapterStatuses);
   });
 
+// Banner Ad birimini platforma göre belirliyoruz
+const bannerAdUnitId = Platform.OS === 'ios' ? 'ca-app-pub-8034970392301400/5715662429' : 'ca-app-pub-8034970392301400/3849451955';
+
 const CombinedAnalysisApp = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [faceImage, setFaceImage] = useState(null);
@@ -132,7 +135,9 @@ const CombinedAnalysisApp = () => {
   const [isAdLoading, setIsAdLoading] = useState(false);
 
   // Interstitial Ad (useRef ile sabit tutuyoruz)
-  const interstitialAdRef = useRef(InterstitialAd.createForAdRequest('ca-app-pub-3940256099942544/1033173712'));
+  const interstitialAdRef = useRef(InterstitialAd.createForAdRequest(
+    Platform.OS === 'ios' ? 'ca-app-pub-8034970392301400/2845956506' : 'ca-app-pub-8034970392301400/9435114266'
+  ));
 
   const animationTimer = useRef(null);
   const blinkInterval = useRef(null);
@@ -1009,8 +1014,8 @@ const CombinedAnalysisApp = () => {
           <Text style={getStyles().buttonText}>{translations[language].backToSummary}</Text>
         </TouchableOpacity>
       </View>
-      {/* Reklam için boşluk bırakıyoruz */}
-      <View style={{ height: 100 }} />
+      {/* Banner Ad için boşluk bırakıyoruz */}
+      <View style={{ height: 60 }} />
     </ScrollView>
   );
 
@@ -1143,7 +1148,7 @@ const CombinedAnalysisApp = () => {
       },
       imageContainer: {
         width: '100%',
-        alignItems: 'center',
+        alignItems: `center`,
         marginVertical: 15,
       },
       image: {
@@ -1428,8 +1433,8 @@ const CombinedAnalysisApp = () => {
             {currentStep === 4 && renderResultsStep()}
           </View>
         </ScrollView>
-        {/* Her zaman en altta görünecek NativeAdBanner */}
-        <NativeAdBanner />
+        {/* Her zaman en altta görünecek BannerAdComponent */}
+        <BannerAdComponent adUnitId={bannerAdUnitId} />
       </View>
       <ResultsPopup {...popupProps} />
     </SafeAreaView>

@@ -9,7 +9,7 @@ install! 'cocoapods', :deterministic_uuids => false
 prepare_react_native_project!
 
 target 'FacePetAnalysis' do
-
+  config = use_native_modules!
 
   use_react_native!(
     :path => config[:reactNativePath],
