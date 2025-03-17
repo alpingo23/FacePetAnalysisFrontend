@@ -1,23 +1,42 @@
 ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 
-require_relative '../node_modules/react-native/scripts/react_native_pods'
-require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
+# Transform this into a `node_require` generic function
+def node_require(script)
+  # Resolve script with node to allow for hoisting
+  require Pod::Executable.execute_command('node', ['-p',
+    "require.resolve(
+      '#{script}',
+      {paths: [process.argv[1]]},
+    )", __dir__]).strip
+end
 
-platform :ios, '16.0'
-install! 'cocoapods', :deterministic_uuids => false
+# Use it to require both react-native's and this package's scripts
+node_require('react-native/scripts/react_native_pods.rb')
+node_require('react-native-permissions/scripts/setup.rb')
 
+# Set platform and minimum iOS version
+platform :ios, '15.1'
 prepare_react_native_project!
 
-target 'FacePetAnalysis' do
+# Handle framework linkage if specified
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
 
+target 'FacePetAnalysis' do
+  # Define the config hash explicitly for use_react_native!
+  config = use_native_modules!
 
   use_react_native!(
-    :path => config[:reactNativePath],
-    :hermes_enabled => true,
-    :fabric_enabled => false,
-    :app_path => "#{Pod::Config.instance.installation_root}/.."
+    :path => config[:reactNativePath],  # Path to React Native
+    :hermes_enabled => true,            # Enable Hermes JS engine
+    :fabric_enabled => false,           # Disable Fabric (new RN architecture)
+    :app_path => "#{Pod::Config.instance.installation_root}/.."  # App root path
   )
 
+  # Additional pods
   pod 'Google-Mobile-Ads-SDK', '12.2.0'
   pod 'RNGoogleMobileAds', :path => '../node_modules/react-native-google-mobile-ads'
   pod 'RNSVG', :path => '../node_modules/react-native-svg'
@@ -26,54 +45,77 @@ target 'FacePetAnalysis' do
   pod 'react-native-image-picker', :path => '../node_modules/react-native-image-picker'
   pod 'BVLinearGradient', :path => '../node_modules/react-native-linear-gradient'
 
+  # Configure permissions using setup_permissions from react-native-permissions
+  setup_permissions([
+    'Camera',           # Camera permission
+    'PhotoLibrary'      # Photo Library permission
+    # Add other permissions here if needed (e.g., 'Microphone')
+  ])
+
+  # Post-install hook
   post_install do |installer|
     react_native_post_install(
       installer,
+      config[:reactNativePath],
       :mac_catalyst_enabled => false
     )
 
+    # Set deployment target for all pods to 15.1
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
       end
     end
 
-    # .bundle dosyalarını manuel oluştur
+    # Create .bundle files manually for specific pods
     installer.pods_project.targets.each do |target|
       if ['react-native-image-picker', 'boost', 'glog'].include?(target.name)
         resources_dir = "Pods/#{target.name}/Resources"
         FileUtils.mkdir_p(resources_dir)
-        bundle_name = "RNImagePickerPrivacyInfo.bundle" if target.name == 'react-native-image-picker'
-        bundle_name = "#{target.name}_privacy.bundle" if ['boost', 'glog'].include?(target.name)
+        bundle_name = case target.name
+                      when 'react-native-image-picker' then 'RNImagePickerPrivacyInfo.bundle'
+                      else "#{target.name}_privacy.bundle"
+                      end
         bundle_path = "#{resources_dir}/#{bundle_name}"
         FileUtils.mkdir_p(bundle_path)
-        FileUtils.cp(
-          "Pods/Target Support Files/#{target.name}/ResourceBundle-#{bundle_name}-#{target.name}-Info.plist",
-          "#{bundle_path}/Info.plist",
-          :verbose => true
-        ) if File.exist?("Pods/Target Support Files/#{target.name}/ResourceBundle-#{bundle_name}-#{target.name}-Info.plist")
-        # Dummy dosya ekle
-        FileUtils.touch("#{bundle_path}/#{File.basename(bundle_name, '.bundle')}")
-        File.write("#{bundle_path}/#{File.basename(bundle_name, '.bundle')}", "Placeholder")
+
+        # Copy Info.plist if it exists
+        plist_source = "Pods/Target Support Files/#{target.name}/ResourceBundle-#{bundle_name}-#{target.name}-Info.plist"
+        if File.exist?(plist_source)
+          FileUtils.cp(plist_source, "#{bundle_path}/Info.plist", :verbose => true)
+        end
+
+        # Add a dummy file
+        dummy_file = "#{bundle_path}/#{File.basename(bundle_name, '.bundle')}"
+        FileUtils.touch(dummy_file)
+        File.write(dummy_file, "Placeholder")
       end
     end
 
-    # .bundle dosyalarını derleme dizinine kopyala (tüm içerikle birlikte)
+    # Modify copy resources phase to include .bundle files
     installer.pods_project.targets.each do |target|
       target.build_phases.each do |phase|
         if phase.display_name == '[CP] Copy Pods Resources'
           phase.shell_script = <<-SCRIPT.gsub(/^ {12}/, '')
             set -ev
-            export IPHONEOS_DEPLOYMENT_TARGET=16.0
+            export IPHONEOS_DEPLOYMENT_TARGET=15.1
             export BUILD_DIR="$PODS_BUILD_DIR"
             export PODS_ROOT="$PODS_ROOT"
-            /bin/sh -c "$PODS_ROOT/Pods/Target\ Support\ Files/#{target.name}/#{target.name}-resources.sh"
-            # Manuel olarak .bundle dosyalarını kopyala (tüm içerikle birlikte)
+            /bin/sh -c "$PODS_ROOT/Pods/Target Support Files/#{target.name}/#{target.name}-resources.sh"
             if [ -d "$PODS_ROOT/#{target.name}/Resources" ]; then
               mkdir -p "$BUILD_DIR/#{target.name}/"
               rsync -av "$PODS_ROOT/#{target.name}/Resources/" "$BUILD_DIR/#{target.name}/"
             fi
           SCRIPT
+        end
+      end
+    end
+
+    # Ensure RNPermissions and related pods are properly linked
+    installer.pods_project.targets.each do |target|
+      if target.name == 'RNPermissions' || target.name.start_with?('Permission-')
+        target.build_configurations.each do |config|
+          config.build_settings['SWIFT_VERSION'] = '5.0' # Ensure Swift compatibility
         end
       end
     end
