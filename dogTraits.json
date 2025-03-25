@@ -2,606 +2,1211 @@
   "n02085620-Chihuahua": {
     "energy": 90,
     "temperament": "playful",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "low",
+    "socialNeed": 70,
+    "groomingNeed": 20,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02085782-Japanese_spaniel": {
     "energy": 40,
     "temperament": "calm",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "low",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02085936-Maltese_dog": {
     "energy": 60,
     "temperament": "gentle",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "low",
+    "socialNeed": 80,
+    "groomingNeed": 70,
+    "independence": 30,
+    "activityPreference": "indoor"
   },
   "n02086079-Pekinese": {
     "energy": 50,
     "temperament": "relaxed",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "low",
+    "socialNeed": 60,
+    "groomingNeed": 80,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02086240-Shih-Tzu": {
     "energy": 40,
     "temperament": "calm",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "low",
+    "socialNeed": 70,
+    "groomingNeed": 90,
+    "independence": 30,
+    "activityPreference": "indoor"
   },
   "n02086646-Blenheim_spaniel": {
     "energy": 55,
     "temperament": "friendly",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "medium",
+    "socialNeed": 80,
+    "groomingNeed": 60,
+    "independence": 30,
+    "activityPreference": "indoor"
   },
   "n02086910-papillon": {
     "energy": 80,
     "temperament": "energetic",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 70,
+    "groomingNeed": 50,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02087046-toy_terrier": {
     "energy": 85,
     "temperament": "playful",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "low",
+    "socialNeed": 60,
+    "groomingNeed": 20,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02087394-Rhodesian_ridgeback": {
     "energy": 85,
     "temperament": "active",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 20,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02088094-Afghan_hound": {
     "energy": 70,
     "temperament": "elegant",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 90,
+    "independence": 70,
+    "activityPreference": "outdoor"
   },
   "n02088238-basset": {
     "energy": 30,
     "temperament": "calm",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 30,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02088364-beagle": {
     "energy": 75,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 70,
+    "groomingNeed": 20,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02088466-bloodhound": {
     "energy": 60,
     "temperament": "serious",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 40,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02088632-bluetick": {
     "energy": 65,
     "temperament": "alert",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 30,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02089078-black-and-tan_coonhound": {
     "energy": 70,
     "temperament": "adventurous",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 30,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02089867-Walker_hound": {
     "energy": 72,
     "temperament": "independent",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 20,
+    "independence": 70,
+    "activityPreference": "outdoor"
   },
   "n02089973-English_foxhound": {
     "energy": 75,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 20,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02090379-redbone": {
     "energy": 78,
     "temperament": "active",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 20,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02090622-borzoi": {
     "energy": 50,
     "temperament": "elegant",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 70,
+    "independence": 70,
+    "activityPreference": "outdoor"
   },
   "n02090721-Irish_wolfhound": {
     "energy": 60,
     "temperament": "calm",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 40,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02091032-Italian_greyhound": {
     "energy": 55,
     "temperament": "playful",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "medium",
+    "socialNeed": 70,
+    "groomingNeed": 20,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02091134-whippet": {
     "energy": 65,
     "temperament": "gentle",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 20,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02091244-Ibizan_hound": {
     "energy": 70,
     "temperament": "alert",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 20,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02091467-Norwegian_elkhound": {
     "energy": 75,
     "temperament": "protective",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 50,
+    "independence": 70,
+    "activityPreference": "outdoor"
   },
   "n02091635-otterhound": {
     "energy": 65,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 60,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02091831-Saluki": {
     "energy": 60,
     "temperament": "elegant",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 40,
+    "independence": 70,
+    "activityPreference": "outdoor"
   },
   "n02092002-Scottish_deerhound": {
     "energy": 50,
     "temperament": "calm",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 40,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02092339-Weimaraner": {
     "energy": 80,
     "temperament": "energetic",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 20,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02093256-Staffordshire_bullterrier": {
     "energy": 80,
     "temperament": "energetic",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "medium",
+    "socialNeed": 70,
+    "groomingNeed": 20,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02093428-American_Staffordshire_terrier": {
     "energy": 85,
     "temperament": "energetic",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "medium",
+    "socialNeed": 70,
+    "groomingNeed": 20,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02093647-Bedlington_terrier": {
     "energy": 65,
     "temperament": "gentle",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 70,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02093754-Border_terrier": {
     "energy": 75,
     "temperament": "spunky",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 30,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02093859-Kerry_blue_terrier": {
     "energy": 70,
     "temperament": "alert",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 60,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02093991-Irish_terrier": {
     "energy": 72,
     "temperament": "bold",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 40,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02094114-Norfolk_terrier": {
     "energy": 68,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 40,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02094258-Norwich_terrier": {
     "energy": 68,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 40,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02094433-Yorkshire_terrier": {
     "energy": 60,
     "temperament": "playful",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "low",
+    "socialNeed": 70,
+    "groomingNeed": 70,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02095314-wire-haired_fox_terrier": {
     "energy": 78,
     "temperament": "alert",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 40,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02095570-Lakeland_terrier": {
     "energy": 75,
     "temperament": "energetic",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 40,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02095889-Sealyham_terrier": {
     "energy": 55,
     "temperament": "calm",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02096051-Airedale": {
     "energy": 80,
     "temperament": "bold",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 50,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02096177-cairn": {
     "energy": 70,
     "temperament": "curious",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 40,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02096294-Australian_terrier": {
     "energy": 72,
     "temperament": "active",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 30,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02096437-Dandie_Dinmont": {
     "energy": 50,
     "temperament": "gentle",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02096585-Boston_bull": {
     "energy": 65,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "low",
+    "socialNeed": 70,
+    "groomingNeed": 20,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02097047-miniature_schnauzer": {
     "energy": 75,
     "temperament": "alert",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02097130-giant_schnauzer": {
     "energy": 80,
     "temperament": "serious",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 60,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02097209-standard_schnauzer": {
     "energy": 75,
     "temperament": "alert",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 50,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02097298-Scotch_terrier": {
     "energy": 60,
     "temperament": "spunky",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 40,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02097474-Tibetan_terrier": {
     "energy": 50,
     "temperament": "calm",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 70,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02097658-silky_terrier": {
     "energy": 65,
     "temperament": "playful",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "low",
+    "socialNeed": 70,
+    "groomingNeed": 60,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02098105-soft-coated_wheaten_terrier": {
     "energy": 70,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 70,
+    "groomingNeed": 60,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02098286-West_Highland_white_terrier": {
     "energy": 70,
     "temperament": "alert",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02098413-Lhasa": {
     "energy": 40,
     "temperament": "calm",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "low",
+    "socialNeed": 60,
+    "groomingNeed": 80,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02099267-flat-coated_retriever": {
     "energy": 85,
     "temperament": "active",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 40,
+    "independence": 30,
+    "activityPreference": "outdoor"
   },
   "n02099429-curly-coated_retriever": {
     "energy": 80,
     "temperament": "loyal",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02099601-golden_retriever": {
     "energy": 75,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 90,
+    "groomingNeed": 60,
+    "independence": 20,
+    "activityPreference": "outdoor"
   },
   "n02099712-Labrador_retriever": {
     "energy": 80,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 90,
+    "groomingNeed": 30,
+    "independence": 20,
+    "activityPreference": "outdoor"
   },
   "n02099849-Chesapeake_Bay_retriever": {
     "energy": 80,
     "temperament": "adventurous",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 40,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02100236-German_short-haired_pointer": {
     "energy": 85,
     "temperament": "energetic",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 20,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02100583-vizsla": {
     "energy": 85,
     "temperament": "athletic",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 20,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02100735-English_setter": {
     "energy": 70,
     "temperament": "gentle",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02100877-Irish_setter": {
     "energy": 80,
     "temperament": "playful",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 60,
+    "independence": 30,
+    "activityPreference": "outdoor"
   },
   "n02101006-Gordon_setter": {
     "energy": 65,
     "temperament": "calm",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02101388-Brittany_spaniel": {
     "energy": 80,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 40,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02101556-clumber": {
     "energy": 40,
     "temperament": "calm",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02102040-English_springer": {
     "energy": 80,
     "temperament": "energetic",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 50,
+    "independence": 30,
+    "activityPreference": "outdoor"
   },
   "n02102177-Welsh_springer_spaniel": {
     "energy": 75,
     "temperament": "friendly",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 50,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02102318-cocker_spaniel": {
     "energy": 60,
     "temperament": "gentle",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "medium",
+    "socialNeed": 80,
+    "groomingNeed": 70,
+    "independence": 30,
+    "activityPreference": "indoor"
   },
   "n02102480-Sussex_spaniel": {
     "energy": 50,
     "temperament": "calm",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02102973-Irish_water_spaniel": {
     "energy": 70,
     "temperament": "playful",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 60,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02104029-kuvasz": {
     "energy": 60,
     "temperament": "protective",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 60,
+    "independence": 70,
+    "activityPreference": "outdoor"
   },
   "n02104365-schipperke": {
     "energy": 65,
     "temperament": "alert",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 30,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02105056-groenendael": {
     "energy": 75,
     "temperament": "serious",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 50,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02105162-malinois": {
     "energy": 85,
     "temperament": "protective",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 30,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02105251-briard": {
     "energy": 70,
     "temperament": "loyal",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 70,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02105412-kelpie": {
     "energy": 80,
     "temperament": "energetic",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 30,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02105505-komondor": {
     "energy": 60,
     "temperament": "protective",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 90,
+    "independence": 70,
+    "activityPreference": "outdoor"
   },
   "n02105641-Old_English_sheepdog": {
     "energy": 70,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 80,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02105855-Shetland_sheepdog": {
     "energy": 75,
     "temperament": "alert",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 60,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02106030-collie": {
     "energy": 75,
     "temperament": "gentle",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 60,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02106166-Border_collie": {
     "energy": 90,
     "temperament": "intelligent",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 40,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02106382-Bouvier_des_Flandres": {
     "energy": 65,
     "temperament": "serious",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 60,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02106550-Rottweiler": {
     "energy": 70,
     "temperament": "protective",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 20,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02106662-German_shepherd": {
     "energy": 85,
     "temperament": "serious",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 40,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02107142-Doberman": {
     "energy": 80,
     "temperament": "protective",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 20,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02107312-miniature_pinscher": {
     "energy": 85,
     "temperament": "bold",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "low",
+    "socialNeed": 60,
+    "groomingNeed": 20,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02107574-Greater_Swiss_Mountain_dog": {
     "energy": 65,
     "temperament": "calm",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 30,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02107683-Bernese_mountain_dog": {
     "energy": 60,
     "temperament": "gentle",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 60,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02107908-Appenzeller": {
     "energy": 75,
     "temperament": "energetic",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 30,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02108000-EntleBucher": {
     "energy": 75,
     "temperament": "alert",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 30,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02108089-boxer": {
     "energy": 75,
     "temperament": "playful",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 80,
+    "groomingNeed": 20,
+    "independence": 30,
+    "activityPreference": "outdoor"
   },
   "n02108422-bull_mastiff": {
     "energy": 50,
     "temperament": "serious",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 20,
+    "independence": 60,
+    "activityPreference": "indoor"
   },
   "n02108551-Tibetan_mastiff": {
     "energy": 55,
     "temperament": "protective",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 70,
+    "independence": 70,
+    "activityPreference": "outdoor"
   },
   "n02108915-French_bulldog": {
     "energy": 55,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "low",
+    "socialNeed": 80,
+    "groomingNeed": 20,
+    "independence": 30,
+    "activityPreference": "indoor"
   },
   "n02109047-Great_Dane": {
     "energy": 50,
     "temperament": "calm",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 20,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02109525-Saint_Bernard": {
     "energy": 40,
     "temperament": "calm",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 60,
+    "independence": 50,
+    "activityPreference": "indoor"
   },
   "n02109961-Eskimo_dog": {
     "energy": 70,
     "temperament": "energetic",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02110063-malamute": {
     "energy": 75,
     "temperament": "active",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 50,
+    "groomingNeed": 60,
+    "independence": 60,
+    "activityPreference": "outdoor"
   },
   "n02110185-Siberian_husky": {
     "energy": 80,
     "temperament": "adventurous",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 60,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02110627-affenpinscher": {
     "energy": 60,
     "temperament": "playful",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "low",
+    "socialNeed": 70,
+    "groomingNeed": 40,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02110806-basenji": {
     "energy": 70,
     "temperament": "independent",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 40,
+    "groomingNeed": 10,
+    "independence": 80,
+    "activityPreference": "outdoor"
   },
   "n02110958-pug": {
     "energy": 50,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "low",
+    "socialNeed": 80,
+    "groomingNeed": 20,
+    "independence": 30,
+    "activityPreference": "indoor"
   },
   "n02111129-Leonberg": {
     "energy": 60,
     "temperament": "gentle",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 60,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02111277-Newfoundland": {
     "energy": 40,
     "temperament": "calm",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 70,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02111500-Great_Pyrenees": {
     "energy": 50,
     "temperament": "protective",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 70,
+    "independence": 70,
+    "activityPreference": "outdoor"
   },
   "n02111889-Samoyed": {
     "energy": 75,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "high",
+    "socialNeed": 80,
+    "groomingNeed": 80,
+    "independence": 30,
+    "activityPreference": "outdoor"
   },
   "n02112018-Pomeranian": {
     "energy": 70,
     "temperament": "playful",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "low",
+    "socialNeed": 80,
+    "groomingNeed": 70,
+    "independence": 30,
+    "activityPreference": "indoor"
   },
   "n02112137-chow": {
     "energy": 50,
     "temperament": "serious",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 80,
+    "independence": 70,
+    "activityPreference": "indoor"
   },
   "n02112350-keeshond": {
     "energy": 65,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 70,
+    "groomingNeed": 70,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02112706-Brabancon_griffon": {
     "energy": 60,
     "temperament": "bold",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "low",
+    "socialNeed": 70,
+    "groomingNeed": 40,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02113023-Pembroke": {
     "energy": 70,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 30,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02113186-Cardigan": {
     "energy": 65,
     "temperament": "friendly",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 60,
+    "groomingNeed": 40,
+    "independence": 50,
+    "activityPreference": "outdoor"
   },
   "n02113624-toy_poodle": {
     "energy": 70,
     "temperament": "elegant",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "low",
+    "socialNeed": 70,
+    "groomingNeed": 80,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02113712-miniature_poodle": {
     "energy": 70,
     "temperament": "elegant",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "medium",
+    "socialNeed": 70,
+    "groomingNeed": 80,
+    "independence": 40,
+    "activityPreference": "indoor"
   },
   "n02113799-standard_poodle": {
     "energy": 70,
     "temperament": "elegant",
-    "style": "feminine"
+    "style": "feminine",
+    "spaceRequirement": "high",
+    "socialNeed": 70,
+    "groomingNeed": 80,
+    "independence": 40,
+    "activityPreference": "outdoor"
   },
   "n02113978-Mexican_hairless": {
     "energy": 60,
     "temperament": "calm",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 10,
+    "independence": 60,
+    "activityPreference": "indoor"
   },
   "n02115641-dingo": {
     "energy": 70,
     "temperament": "wild",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 30,
+    "groomingNeed": 20,
+    "independence": 80,
+    "activityPreference": "outdoor"
   },
   "n02115913-dhole": {
     "energy": 80,
     "temperament": "wild",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 30,
+    "groomingNeed": 20,
+    "independence": 80,
+    "activityPreference": "outdoor"
   },
   "n02116738-African_hunting_dog": {
     "energy": 85,
     "temperament": "wild",
-    "style": "masculine"
+    "style": "masculine",
+    "spaceRequirement": "high",
+    "socialNeed": 40,
+    "groomingNeed": 20,
+    "independence": 70,
+    "activityPreference": "outdoor"
   },
   "Unknown": {
     "energy": 50,
     "temperament": "neutral",
-    "style": "neutral"
+    "style": "neutral",
+    "spaceRequirement": "medium",
+    "socialNeed": 50,
+    "groomingNeed": 50,
+    "independence": 50,
+    "activityPreference": "indoor"
   }
 }

@@ -24,6 +24,7 @@ import Svg, { Circle, Line, Path } from 'react-native-svg';
 import translations from './translations.json';
 import CustomLanguageSelector from './CustomLanguageSelector';
 import ResultsPopup from './ResultsPopup';
+import QuestionsStep from './QuestionsStep'; // Yeni soru bileşeni
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { InterstitialAd, AdEventType, BannerAdSize } from 'react-native-google-mobile-ads';
 import mobileAds from 'react-native-google-mobile-ads';
@@ -133,6 +134,13 @@ const CombinedAnalysisApp = () => {
   const [theme, setTheme] = useState('light');
   const [isAdLoaded, setIsAdLoaded] = useState(false);
   const [isAdLoading, setIsAdLoading] = useState(false);
+  const [userQuestions, setUserQuestions] = useState({
+    hasLargeSpace: undefined,
+    hoursAtHome: undefined,
+    activeDays: undefined,
+    hobbyTime: undefined,
+    livingWith: undefined,
+  });
 
   // Interstitial Ad (useRef ile sabit tutuyoruz)
   const interstitialAdRef = useRef(InterstitialAd.createForAdRequest(
@@ -577,20 +585,23 @@ const CombinedAnalysisApp = () => {
       setError(translations[language].errorUploadFaceImage);
       return;
     }
+    setCurrentStep(3); // Soru adımına geçiş
+  };
 
+  const analyzeImages = async () => {
     setIsAnalyzing(true);
-    setCurrentStep(3);
+    setCurrentStep(4); // Analysis adımına geçiş
     setAnalysisProgress(0);
     setError(null);
 
     const [faceDetections, petResult] = await Promise.all([analyzeFace(), analyzePet()]);
     if (!faceDetections || !petResult) {
       setIsAnalyzing(false);
-      setCurrentStep(2);
+      setCurrentStep(3); // Sorulara geri dön
       return;
     }
 
-    const compatibilityResult = calculateCompatibilityScore(petResult, faceDetections);
+    const compatibilityResult = calculateCompatibilityScore(petResult, faceDetections, userQuestions);
     setCompatibility(compatibilityResult);
 
     let frameCount = 0;
@@ -618,6 +629,7 @@ const CombinedAnalysisApp = () => {
             setShowResultsPopup(true);
           }, 5000);
         }
+        setCurrentStep(5); // Sonuç adımına geçiş
       }
     };
     animate();
@@ -638,6 +650,13 @@ const CombinedAnalysisApp = () => {
     setPetImageSize({ width: 1000, height: 700 });
     setFaceImageSize({ width: 324, height: 324 });
     setShowResultsPopup(false);
+    setUserQuestions({
+      hasLargeSpace: undefined,
+      hoursAtHome: undefined,
+      activeDays: undefined,
+      hobbyTime: undefined,
+      livingWith: undefined,
+    });
     if (animationTimer.current) cancelAnimationFrame(animationTimer.current);
   };
 
@@ -813,6 +832,21 @@ const CombinedAnalysisApp = () => {
       </View>
       {error && <Text style={getStyles().errorText}>{error}</Text>}
     </View>
+  );
+
+  const renderQuestionsStep = () => (
+    <QuestionsStep
+      language={language}
+      translations={translations}
+      theme={theme}
+      COLORS={COLORS}
+      SHADOWS={SHADOWS}
+      userQuestions={userQuestions}
+      setUserQuestions={setUserQuestions}
+      onContinue={analyzeImages}
+      onBack={() => setCurrentStep(2)}
+      faceResults={faceResults}
+    />
   );
 
   const renderAnalysisStep = () => (
@@ -1148,7 +1182,7 @@ const CombinedAnalysisApp = () => {
       },
       imageContainer: {
         width: '100%',
-        alignItems: `center`,
+        alignItems: 'center',
         marginVertical: 15,
       },
       image: {
@@ -1393,7 +1427,7 @@ const CombinedAnalysisApp = () => {
     onSeeMoreDetails: () => {
       console.log('Navigating to detailed results');
       setShowResultsPopup(false);
-      setCurrentStep(4);
+      setCurrentStep(5);
     },
     translations,
     language,
@@ -1429,11 +1463,11 @@ const CombinedAnalysisApp = () => {
           <View style={getStyles().main}>
             {currentStep === 1 && renderPetUploadStep()}
             {currentStep === 2 && renderFaceUploadStep()}
-            {currentStep === 3 && isAnalyzing && renderAnalysisStep()}
-            {currentStep === 4 && renderResultsStep()}
+            {currentStep === 3 && renderQuestionsStep()}
+            {currentStep === 4 && isAnalyzing && renderAnalysisStep()}
+            {currentStep === 5 && renderResultsStep()}
           </View>
         </ScrollView>
-        {/* Her zaman en altta görünecek BannerAdComponent */}
         <BannerAdComponent adUnitId={bannerAdUnitId} />
       </View>
       <ResultsPopup {...popupProps} />

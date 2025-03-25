@@ -1,33 +1,54 @@
-// ResultsPopup.js - Güncellenmiş versiyon
 import React from 'react';
-import { Modal, View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native';
+import { Modal, View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, Platform, ScrollView } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const ResultsPopup = ({ 
-  visible, 
-  onClose, 
-  compatibilityScore, 
-  details, 
-  petImage, 
+const ResultsPopup = ({
+  visible,
+  onClose,
+  compatibilityScore,
+  details,
+  petImage,
   faceImage,
   petBreed,
   onSeeMoreDetails,
   translations,
-  language
+  language,
+  userQuestions,
 }) => {
+  console.log('[ResultsPopup] userQuestions:', userQuestions);
+
   const getScoreColor = (score) => {
-    if (score < 45) return '#FF0000';
-    if (score < 60) return '#FFFF00';
-    if (score < 75) return '#FFA500';
-    if (score < 85) return '#90EE90';
-    return '#2ECC71';
+    if (score < 45) return '#FF0000'; // Red
+    if (score < 60) return '#FFFF00'; // Yellow
+    if (score < 75) return '#FFA500'; // Orange
+    if (score < 85) return '#90EE90'; // Light Green
+    return '#2ECC71'; // Green
   };
 
-  const formattedDetails = details ? details.map(detail => ({
-    title: detail.title[language]?.replace(' Compatibility', ''),
-    score: detail.score
-  })) : [];
+  const getDynamicDescription = (score, category) => {
+    if (score < 45) {
+      return `Poor ${category.toLowerCase()} compatibility. Significant adjustments may be needed.`;
+    } else if (score < 60) {
+      return `Low ${category.toLowerCase()} compatibility. You may face some challenges.`;
+    } else if (score < 75) {
+      return `Moderate ${category.toLowerCase()} compatibility. Adjustments may help.`;
+    } else if (score < 85) {
+      return `Good ${category.toLowerCase()} compatibility. You're on the right track!`;
+    } else if (score < 95) {
+      return `Great ${category.toLowerCase()} compatibility! Minor tweaks could make it perfect.`;
+    } else {
+      return `Excellent ${category.toLowerCase()} compatibility! You and your pet are a perfect match.`;
+    }
+  };
+
+  const formattedDetails = details
+    ? details.map((detail) => ({
+        title: detail.title[language]?.replace(' Compatibility', '') || detail.title,
+        score: detail.score,
+        description: detail.description?.[language] || getDynamicDescription(detail.score, detail.title[language]?.replace(' Compatibility', '') || detail.title),
+      }))
+    : [];
 
   const formatBreedName = (breed) => {
     if (!breed) return '';
@@ -38,28 +59,30 @@ const ResultsPopup = ({
   const renderProgressBar = (score, color) => {
     return (
       <View style={styles.progressBarContainer}>
-        <View 
+        <View
           style={[
             styles.progressBar,
-            { 
+            {
               width: `${score}%`,
-              backgroundColor: color
-            }
-          ]} 
+              backgroundColor: color,
+            },
+          ]}
         />
       </View>
     );
   };
 
-  const renderCategory = (title, score, index) => {
+  const renderCategory = (title, score, description, index) => {
     let displayTitle = title;
     if (title && title.includes(' and ')) {
       displayTitle = title.split(' and ')[0];
     }
-    
+
     return (
       <View style={styles.categorySection} key={index}>
-        <Text style={styles.categoryTitle} numberOfLines={1}>{displayTitle}</Text>
+        <Text style={styles.categoryTitle} numberOfLines={1} ellipsizeMode="tail">
+          {displayTitle}
+        </Text>
         <Text style={[styles.categoryScore, { color: getScoreColor(score) }]}>
           {score}
         </Text>
@@ -80,83 +103,84 @@ const ResultsPopup = ({
       }}
     >
       <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <TouchableOpacity 
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log('Close button pressed in ResultsPopup');
+                  onClose();
+                  onSeeMoreDetails();
+                }}
+                style={styles.closeButton}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+              <Text style={styles.title}>{translations[language].resultsTitle || 'Compatibility Result'}</Text>
+              <View style={styles.placeholderRight} />
+            </View>
+
+            <View style={styles.imagesContainer}>
+              <View style={styles.imageWithLabel}>
+                <Image source={{ uri: petImage }} style={styles.circularImage} resizeMode="cover" />
+                <Text style={styles.imageLabel} numberOfLines={1}>
+                  {formatBreedName(petBreed)}
+                </Text>
+              </View>
+              <View style={styles.imageWithLabel}>
+                <Image source={{ uri: faceImage }} style={styles.circularImage} resizeMode="cover" />
+                <Text style={styles.imageLabel}>{translations[language].human || 'Human'}</Text>
+              </View>
+            </View>
+
+            <View style={styles.overallScoreSection}>
+              <Text style={styles.overallTitle}>{translations[language].overallScore || 'Overall'}</Text>
+              <Text style={[styles.overallScoreValue, { color: getScoreColor(compatibilityScore) }]}>
+                {compatibilityScore || 0}
+              </Text>
+              {renderProgressBar(compatibilityScore || 0, getScoreColor(compatibilityScore))}
+            </View>
+
+            <View style={styles.categoriesGrid}>
+              <View style={styles.categoryRow}>
+                {formattedDetails.length > 0 && (
+                  <View style={styles.categoryColumn}>
+                    {renderCategory(formattedDetails[0]?.title, formattedDetails[0]?.score, formattedDetails[0]?.description, 0)}
+                  </View>
+                )}
+                {formattedDetails.length > 1 && (
+                  <View style={styles.categoryColumn}>
+                    {renderCategory(formattedDetails[1]?.title, formattedDetails[1]?.score, formattedDetails[1]?.description, 1)}
+                  </View>
+                )}
+              </View>
+              <View style={styles.categoryRow}>
+                {formattedDetails.length > 2 && (
+                  <View style={styles.categoryColumn}>
+                    {renderCategory(formattedDetails[2]?.title, formattedDetails[2]?.score, formattedDetails[2]?.description, 2)}
+                  </View>
+                )}
+                {formattedDetails.length > 3 && (
+                  <View style={styles.categoryColumn}>
+                    {renderCategory(formattedDetails[3]?.title, formattedDetails[3]?.score, formattedDetails[3]?.description, 3)}
+                  </View>
+                )}
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.actionButton}
               onPress={() => {
-                console.log('Close button pressed in ResultsPopup');
-                onClose();
+                console.log('See More Details button pressed');
                 onSeeMoreDetails();
-              }} 
-              style={styles.closeButton}
+              }}
             >
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Text style={styles.actionButtonText}>
+                {translations[language].seeMoreDetails || 'See More Details'}
+              </Text>
             </TouchableOpacity>
-            <Text style={styles.title}>{translations[language].resultsTitle || 'Compatibility Result'}</Text>
-            <View style={styles.placeholderRight} />
           </View>
-
-          <View style={styles.imagesContainer}>
-            <View style={styles.imageWithLabel}>
-              <Image 
-                source={{ uri: petImage }} 
-                style={styles.circularImage} 
-                resizeMode="cover" 
-              />
-              <Text style={styles.imageLabel} numberOfLines={1}>{formatBreedName(petBreed)}</Text>
-            </View>
-            <View style={styles.imageWithLabel}>
-              <Image 
-                source={{ uri: faceImage }} 
-                style={styles.circularImage} 
-                resizeMode="cover" 
-              />
-              <Text style={styles.imageLabel}>{translations[language].human || 'Human'}</Text>
-            </View>
-          </View>
-
-          <View style={styles.overallScoreSection}>
-            <Text style={styles.overallTitle}>{translations[language].overallScore || 'Overall'}</Text>
-            <Text style={[styles.overallScoreValue, { color: getScoreColor(compatibilityScore) }]}>
-              {compatibilityScore || 0}
-            </Text>
-            {renderProgressBar(compatibilityScore || 0, getScoreColor(compatibilityScore))}
-          </View>
-
-          <View style={styles.categoriesGrid}>
-            <View style={styles.categoryRow}>
-              {formattedDetails.length > 0 && (
-                <View style={styles.categoryColumn}>
-                  {renderCategory(formattedDetails[0]?.title, formattedDetails[0]?.score, 0)}
-                </View>
-              )}
-              {formattedDetails.length > 1 && (
-                <View style={styles.categoryColumn}>
-                  {renderCategory(formattedDetails[1]?.title, formattedDetails[1]?.score, 1)}
-                </View>
-              )}
-            </View>
-            <View style={styles.categoryRow}>
-              {formattedDetails.length > 2 && (
-                <View style={styles.categoryColumn}>
-                  {renderCategory(formattedDetails[2]?.title, formattedDetails[2]?.score, 2)}
-                </View>
-              )}
-              {formattedDetails.length > 3 && (
-                <View style={styles.categoryColumn}>
-                  {renderCategory(formattedDetails[3]?.title, formattedDetails[3]?.score, 3)}
-                </View>
-              )}
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.actionButton} onPress={() => {
-            console.log('See More Details button pressed');
-            onSeeMoreDetails();
-          }}>
-            <Text style={styles.actionButtonText}>{translations[language].seeMoreDetails || 'See More Details'}</Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -166,6 +190,11 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -269,14 +298,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     textAlign: 'center',
-    marginBottom: 2,
-    maxWidth: '90%',
+    maxWidth: '80%', // Reduced maxWidth to prevent overflow
+    marginBottom: 5,
   },
   categoryScore: {
     fontSize: 36,
     fontWeight: 'bold',
-    marginBottom: 2,
     textAlign: 'center',
+    marginBottom: 5,
   },
   progressBarContainer: {
     width: '100%',

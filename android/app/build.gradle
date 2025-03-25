@@ -19,13 +19,13 @@ android {
     ndkVersion rootProject.ext.ndkVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.facepetanalysis"
+    namespace "com.alpipekciler.facepetanalysis"
     defaultConfig {
-        applicationId "com.facepetanalysis"
+        applicationId "com.alpipekciler.facepetanalysis"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
     }
     signingConfigs {
         debug {
@@ -34,13 +34,19 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            storeFile file('/Users/alpipekciler/Desktop/FacePetAnalysisProject/FacePetAnalysis/keystore/Untitled.jks')
+            storePassword 'Hjk4tie2x2?' // Keystore şifrenizi buraya yazın
+            keyAlias 'key0' // Keystore aliasınızı buraya yazın
+            keyPassword 'Hjk4tie2x2' // Alias şifrenizi buraya yazın
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release // Release için keystore’u kullan
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
