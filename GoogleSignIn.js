@@ -1,3 +1,4 @@
+import Config from 'react-native-config';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -26,15 +27,14 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
   };
 
   useEffect(() => {
-    // Configure Google Sign-In
     log('Configuring Google Sign-In...');
     GoogleSignin.configure({
-      webClientId: '1051097822472-jfr8jn1qs5q0clh3rlmrs6j8ugsl34d0.apps.googleusercontent.com', // Firebase Console'dan aldığınız Web Client ID
-      offlineAccess: true, // idToken ve serverAuthCode almak için gerekli
-      scopes: ['profile', 'email'], // Kullanıcı bilgilerine erişim için gerekli kapsamlar
-      forceCodeForRefreshToken: true, // [Android] serverAuthCode almak için gerekli
+      webClientId: Config.GOOGLE_WEB_CLIENT_ID,
+      offlineAccess: true,
+      scopes: ['profile', 'email'],
+      forceCodeForRefreshToken: true,
     });
-
+  
     checkCurrentUser();
   }, []);
 

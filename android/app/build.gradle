@@ -1,4 +1,3 @@
-// Bu satırların en üstte olduğundan emin olun:
 project.ext.react = [
     enableHermes: false  // Hermes'i devre dışı bırakın
 ]
@@ -15,6 +14,8 @@ react {
 
 def enableProguardInReleaseBuilds = false
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+
 
 android {
     ndkVersion rootProject.ext.ndkVersion
