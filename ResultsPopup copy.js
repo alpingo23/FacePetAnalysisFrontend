@@ -114,6 +114,7 @@ const ResultsPopup = ({
   const petAnalysis = petResult
     ? {
         breed: formatBreedName(petBreed),
+        gender: petResult.gender || 'Unknown',
         energy: petResult.energy || 50,
         socialNeed: petResult.socialNeed || 50,
         independence: petResult.independence || 50,
@@ -126,6 +127,7 @@ const ResultsPopup = ({
       }
     : {
         breed: 'Unknown',
+        gender: 'Unknown',
         energy: 50,
         socialNeed: 50,
         independence: 50,
@@ -270,7 +272,7 @@ const ResultsPopup = ({
   const renderFaceAnalysisSlide = (faceAnalysis) => {
     console.log('[ResultsPopup] Rendering Face Analysis Slide...');
     console.log('[renderFaceAnalysisSlide] faceAnalysis:', faceAnalysis);
-
+  
     // faceAnalysis veya expressions yoksa hata mesajı döndür
     if (!faceAnalysis || !faceAnalysis.expressions) {
       return (
@@ -284,29 +286,21 @@ const ResultsPopup = ({
         </ScrollView>
       );
     }
-
-    // İfade isimlerini tanımlayalım
-    const expressionNames = ['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'neutral'];
-
-    // expressions nesnesini bir diziye dönüştürelim
-    let expressionEntries = [];
-    if (Array.isArray(faceAnalysis.expressions)) {
-      // Eğer expressions bir dizi ise, her bir değeri expressionNames ile eşleştir
-      expressionEntries = faceAnalysis.expressions.map((value, index) => [
-        expressionNames[index] || `expression${index}`,
-        value,
-      ]);
-    } else if (typeof faceAnalysis.expressions === 'object') {
-      // Eğer expressions bir nesne ise, Object.entries kullan
-      expressionEntries = Object.entries(faceAnalysis.expressions);
-    }
-
+  
+    // expressions dizisini güvenli bir şekilde işleyelim
+    const expressionEntries = Array.isArray(faceAnalysis.expressions)
+      ? faceAnalysis.expressions.map(entry => ({
+          name: entry.expression || 'Unknown', // expression yoksa varsayılan değer
+          value: entry.value || '0',          // value yoksa varsayılan değer
+        }))
+      : [];
+  
     return (
       <ScrollView contentContainerStyle={styles.slide}>
         <Text style={[styles.categoryTitle, { color: '#fff' }]}>
           {translations[language].faceAnalysisTitle || 'Face Analysis'}
         </Text>
-
+  
         <View style={styles.imageWithLabel}>
           {faceImage ? (
             <Image source={{ uri: faceImage }} style={styles.circularImage} resizeMode="cover" />
@@ -317,7 +311,7 @@ const ResultsPopup = ({
           )}
           <Text style={styles.imageLabel}>{translations[language].human || 'Human'}</Text>
         </View>
-
+  
         <View style={styles.analysisDetails}>
           <Text style={styles.analysisLabel}>
             {translations[language].ageLabel || 'Age'}: <Text style={styles.analysisValue}>{faceAnalysis.age || 'N/A'}</Text>
@@ -326,25 +320,23 @@ const ResultsPopup = ({
             {translations[language].genderLabel || 'Gender'}: <Text style={styles.analysisValue}>{faceAnalysis.gender || 'N/A'}</Text>
           </Text>
           <Text style={styles.analysisLabel}>
-            {translations[language].expressionLabel || 'Expressions'}:
+            {translations[language].expressions || 'Expressions'}:
           </Text>
           {expressionEntries.length > 0 ? (
-            expressionEntries.map(([expression, value], index) => {
-              // Çeviri yoksa expression'ı olduğu gibi kullan
-              const expressionLabel = translations[language].expressions?.[expression]
-                ? translations[language].expressions[expression].charAt(0).toUpperCase() +
-                  translations[language].expressions[expression].slice(1)
-                : expression.charAt(0).toUpperCase() + expression.slice(1);
-              const expressionValue = parseFloat(value) * 100; // Değeri yüzdelik olarak dönüştür
-              const displayValue = isNaN(expressionValue) ? 0 : expressionValue; // NaN ise 0 kullan
-
+            expressionEntries.map((entry, index) => {
+              // Çeviri yoksa entry.name'i olduğu gibi kullan
+              const expressionLabel = translations[language].expressions?.[entry.name]
+                ? translations[language].expressions[entry.name].charAt(0).toUpperCase() + translations[language].expressions[entry.name].slice(1)
+                : entry.name.charAt(0).toUpperCase() + entry.name.slice(1);
+              const value = parseFloat(entry.value) || 0; // String'i sayıya çevir, hata varsa 0 kullan
+  
               return (
                 <View key={index} style={styles.expressionRow}>
                   <Text style={styles.expressionLabel}>
                     {expressionLabel}:
                   </Text>
-                  <Text style={styles.expressionValue}>{displayValue.toFixed(2)}%</Text>
-                  {renderProgressBar(displayValue, getScoreColor(displayValue))}
+                  <Text style={styles.expressionValue}>{value}%</Text>
+                  {renderProgressBar(value, getScoreColor(value))}
                 </View>
               );
             })
@@ -383,6 +375,9 @@ const ResultsPopup = ({
         <View style={styles.analysisDetails}>
           <Text style={styles.analysisLabel}>
             {translations[language].breedLabel || 'Breed'}: <Text style={styles.analysisValue}>{petAnalysis.breed}</Text>
+          </Text>
+          <Text style={styles.analysisLabel}>
+            {translations[language].genderLabel || 'Gender'}: <Text style={styles.analysisValue}>{petAnalysis.gender}</Text>
           </Text>
           <Text style={styles.analysisLabel}>
             {translations[language].energy || 'Energy Level'}: <Text style={styles.analysisValue}>{petAnalysis.energy}</Text>

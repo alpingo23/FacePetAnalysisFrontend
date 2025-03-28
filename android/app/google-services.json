@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1051097822472",
+    "project_id": "petfacematch",
+    "storage_bucket": "petfacematch.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1051097822472:android:59c32809da17e40bca68bd",
+        "android_client_info": {
+          "package_name": "com.alpipekciler.facepetanalysis"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1051097822472-dpia63rbiff0d678nsgckemim1dujj11.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.alpipekciler.facepetanalysis",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "1051097822472-jfr8jn1qs5q0clh3rlmrs6j8ugsl34d0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBE7g-AYz5KgQnIp0sSC_ustLlSl78JscM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1051097822472-jfr8jn1qs5q0clh3rlmrs6j8ugsl34d0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -11,42 +11,17 @@ import {
 
 const { width, height } = Dimensions.get('window');
 
-// Yardımcı bileşen: Yıldız şekli
-const StarIcon = ({ size, color }) => (
-  <View style={{
-    width: size,
-    height: size,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  }}>
-    <View style={{
-      width: size * 0.6,
-      height: size * 0.6,
-      backgroundColor: color,
-      transform: [{ rotate: '45deg' }],
-      position: 'absolute',
-    }} />
-    <View style={{
-      width: size * 0.6,
-      height: size * 0.6,
-      backgroundColor: color,
-      transform: [{ rotate: '-45deg' }],
-      position: 'absolute',
-    }} />
-  </View>
-);
-
 const QuestionsStep = ({
   language,
   translations,
+  theme,
   COLORS,
   SHADOWS,
   userQuestions,
   setUserQuestions,
   onContinue,
   onBack,
-  faceResults,
+  faceResult, // Prop ismini faceResults'dan faceResult olarak düzelttik
   showStartAnalysisButton = false,
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -55,7 +30,7 @@ const QuestionsStep = ({
     StyleSheet.create({
       container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: COLORS[theme].white,
       },
       header: {
         flexDirection: 'row',
@@ -64,13 +39,13 @@ const QuestionsStep = ({
         paddingTop: 10,
         paddingBottom: 10,
         height: 50,
-        backgroundColor: '#1A1A1A',
+        backgroundColor: COLORS[theme].light,
       },
       backButton: {
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: '#333',
+        backgroundColor: '#F0EEF6',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 15,
@@ -78,7 +53,7 @@ const QuestionsStep = ({
       backIcon: {
         fontSize: 30,
         fontWeight: 'bold',
-        color: '#FFF',
+        color: '#000000',
         textAlign: 'center',
         lineHeight: 36,
         marginTop: -10,
@@ -86,12 +61,12 @@ const QuestionsStep = ({
       progressBar: {
         flex: 1,
         height: 4,
-        backgroundColor: '#333',
+        backgroundColor: '#F0EEF6',
         borderRadius: 2,
       },
       progressFill: {
         height: '100%',
-        backgroundColor: COLORS.primary,
+        backgroundColor: COLORS[theme].dark,
         borderRadius: 2,
       },
       scrollView: {
@@ -106,82 +81,89 @@ const QuestionsStep = ({
       title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#FFF',
+        color: COLORS[theme].dark,
         marginBottom: 8,
       },
       subtitle: {
         fontSize: 14,
-        color: '#AAA',
+        color: COLORS[theme].dark,
         marginBottom: 25,
       },
       optionContainer: {
         marginBottom: 15,
       },
       option: {
-        backgroundColor: '#1A1A1A',
         borderRadius: 15,
         padding: 15,
         marginBottom: 15,
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: theme === 'dark' ? '#000000' : '#F6F6F6',
       },
       optionSelected: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: theme === 'dark' ? '#FFFFFF' : '#000000',
       },
       optionIcon: {
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: '#333',
+        backgroundColor: '#000000',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 15,
       },
-      // Icon styles
-      singleDot: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        backgroundColor: '#FFFFFF',
+      optionTextContainer: {
+        flex: 1,
       },
-      tripleDots: {
-        width: 30,
-        height: 10,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+      optionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: theme === 'dark' ? '#FFFFFF' : '#000000',
       },
-      smallDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#FFFFFF',
+      optionDescription: {
+        fontSize: 14,
+        color: theme === 'dark' ? '#FFFFFF' : '#000000',
       },
-      starShape: {
-        height: 20,
-        width: 20,
+      selectedText: {
+        color: theme === 'dark' ? '#000000' : '#FFFFFF',
       },
-      starInner: {
-        backgroundColor: '#FFFFFF',
-        height: 20,
-        width: 20,
+      nextButtonContainer: {
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        borderTopWidth: 1,
+        borderTopColor: '#F0EEF6',
       },
-      houseShape: {
-        width: 20,
-        height: 16,
-        backgroundColor: '#FFFFFF',
+      nextButton: {
+        backgroundColor: COLORS[theme].dark,
+        height: 50,
+        borderRadius: 25,
+        justifyContent: 'center',
+        alignItems: 'center',
       },
+      nextButtonDisabled: {
+        backgroundColor: '#CCCCCC',
+      },
+      nextButtonText: {
+        color: COLORS[theme].white,
+        fontSize: 16,
+        fontWeight: 'bold',
+      },
+      // Diğer stiller (ikonlar için)
       roofShape: {
         width: 0,
         height: 0,
-        backgroundColor: 'transparent',
-        borderStyle: 'solid',
-        borderLeftWidth: 12,
-        borderRightWidth: 12,
+        borderLeftWidth: 10,
+        borderRightWidth: 10,
         borderBottomWidth: 10,
         borderLeftColor: 'transparent',
         borderRightColor: 'transparent',
         borderBottomColor: '#FFFFFF',
         marginBottom: 2,
+      },
+      houseShape: {
+        width: 20,
+        height: 15,
+        backgroundColor: '#FFFFFF',
       },
       clockShape: {
         width: 20,
@@ -193,13 +175,15 @@ const QuestionsStep = ({
         alignItems: 'center',
       },
       clockHands: {
-        position: 'absolute',
         width: 2,
-        height: 8,
+        height: 10,
         backgroundColor: '#FFFFFF',
-        top: 4,
+        position: 'absolute',
+        top: 5,
+        left: 9,
       },
       personShape: {
+        justifyContent: 'center',
         alignItems: 'center',
       },
       personHead: {
@@ -207,81 +191,47 @@ const QuestionsStep = ({
         height: 10,
         borderRadius: 5,
         backgroundColor: '#FFFFFF',
-        marginBottom: 2,
       },
       personBody: {
+        width: 2,
+        height: 15,
+        backgroundColor: '#FFFFFF',
+        marginTop: 2,
+      },
+      personLegs: {
+        flexDirection: 'row',
+        marginTop: 2,
+      },
+      personLeg: {
         width: 2,
         height: 10,
         backgroundColor: '#FFFFFF',
       },
-      personLegs: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: 10,
-      },
-      personLeg: {
-        width: 2,
-        height: 8,
-        backgroundColor: '#FFFFFF',
-        transform: [{ rotate: '15deg' }],
-      },
       personLegRight: {
-        transform: [{ rotate: '-15deg' }],
-      },
-      groupShape: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'flex-end',
+        marginLeft: 4,
       },
       smallPersonHead: {
         width: 6,
         height: 6,
         borderRadius: 3,
         backgroundColor: '#FFFFFF',
-        marginBottom: 1,
       },
       smallPersonBody: {
-        width: 1,
-        height: 6,
+        width: 1.5,
+        height: 10,
         backgroundColor: '#FFFFFF',
+        marginTop: 2,
       },
-      optionTextContainer: {
-        flex: 1,
+      groupShape: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: 36,
       },
-      optionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFF',
-        marginBottom: 4,
-      },
-      optionDescription: {
-        fontSize: 14,
-        color: '#CCC',
-      },
-      selectedText: {
-        color: '#FFFFFF',
-      },
-      nextButtonContainer: {
-        paddingHorizontal: 20,
-        paddingVertical: 15,
-        borderTopWidth: 1,
-        borderTopColor: '#333',
-      },
-      nextButton: {
-        backgroundColor: COLORS.primary,
-        height: 50,
-        borderRadius: 25,
-        justifyContent: 'center',
-        alignItems: 'center',
-        ...SHADOWS.medium,
-      },
-      nextButtonDisabled: {
-        backgroundColor: '#444',
-      },
-      nextButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: 'bold',
+      singleDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#FFFFFF',
       },
     });
 
@@ -292,18 +242,8 @@ const QuestionsStep = ({
       title: translations[language].questions.hasLargeSpace,
       subtitle: translations[language].questionsSubtitle || 'This will help us understand your living environment.',
       options: [
-        { 
-          value: true, 
-          title: translations[language].yes, 
-          description: '', 
-          icon: 'house' 
-        },
-        { 
-          value: false, 
-          title: translations[language].no, 
-          description: '', 
-          icon: 'apartment' 
-        },
+        { value: true, title: translations[language].yes, description: '', icon: 'house' },
+        { value: false, title: translations[language].no, description: '', icon: 'apartment' },
       ],
     },
     {
@@ -311,24 +251,9 @@ const QuestionsStep = ({
       title: translations[language].questions.hoursAtHome,
       subtitle: translations[language].questionsSubtitle || 'This will help us understand your availability.',
       options: [
-        { 
-          value: '0-4', 
-          title: translations[language].hoursAtHomeOptions['0-4'], 
-          description: '', 
-          icon: 'clock1' 
-        },
-        { 
-          value: '4-8', 
-          title: translations[language].hoursAtHomeOptions['4-8'], 
-          description: '', 
-          icon: 'clock2' 
-        },
-        { 
-          value: '8+', 
-          title: translations[language].hoursAtHomeOptions['8+'], 
-          description: '', 
-          icon: 'clock3' 
-        },
+        { value: '0-4', title: translations[language].hoursAtHomeOptions['0-4'], description: '', icon: 'clock1' },
+        { value: '4-8', title: translations[language].hoursAtHomeOptions['4-8'], description: '', icon: 'clock2' },
+        { value: '8+', title: translations[language].hoursAtHomeOptions['8+'], description: '', icon: 'clock3' },
       ],
     },
     {
@@ -336,24 +261,9 @@ const QuestionsStep = ({
       title: translations[language].questions.activeDays,
       subtitle: translations[language].questionsSubtitle || 'This will help us gauge your activity level.',
       options: [
-        { 
-          value: '0-2', 
-          title: translations[language].activeDaysOptions['0-2'], 
-          description: '', 
-          icon: 'walk1' 
-        },
-        { 
-          value: '3-5', 
-          title: translations[language].activeDaysOptions['3-5'], 
-          description: '', 
-          icon: 'walk2' 
-        },
-        { 
-          value: '6-7', 
-          title: translations[language].activeDaysOptions['6-7'], 
-          description: '', 
-          icon: 'walk3' 
-        },
+        { value: '0-2', title: translations[language].activeDaysOptions['0-2'], description: '', icon: 'walk1' },
+        { value: '3-5', title: translations[language].activeDaysOptions['3-5'], description: '', icon: 'walk2' },
+        { value: '6-7', title: translations[language].activeDaysOptions['6-7'], description: '', icon: 'walk3' },
       ],
     },
     {
@@ -361,51 +271,21 @@ const QuestionsStep = ({
       title: translations[language].questions.hobbyTime,
       subtitle: translations[language].questionsSubtitle || 'This will help us understand your free time.',
       options: [
-        { 
-          value: 'lessThan1', 
-          title: translations[language].hobbyTimeOptions['lessThan1'], 
-          description: '', 
-          icon: 'star1' 
-        },
-        { 
-          value: '1-3', 
-          title: translations[language].hobbyTimeOptions['1-3'], 
-          description: '', 
-          icon: 'star2' 
-        },
-        { 
-          value: '3+', 
-          title: translations[language].hobbyTimeOptions['3+'], 
-          description: '', 
-          icon: 'star3' 
-        },
+        { value: 'lessThan1', title: translations[language].hobbyTimeOptions['lessThan1'], description: '', icon: 'star1' },
+        { value: '1-3', title: translations[language].hobbyTimeOptions['1-3'], description: '', icon: 'star2' },
+        { value: '3+', title: translations[language].hobbyTimeOptions['3+'], description: '', icon: 'star3' },
       ],
     },
     {
       key: 'livingWith',
-      title: faceResults && faceResults[0]?.age < 30
+      title: faceResult && faceResult[0]?.age < 30
         ? translations[language].questions.livingWithYoung
         : translations[language].questions.livingWith,
       subtitle: translations[language].questionsSubtitle || 'This will help us understand your household.',
       options: [
-        { 
-          value: 'Yalnız yaşıyorum', 
-          title: translations[language].alone, 
-          description: '', 
-          icon: 'person1' 
-        },
-        { 
-          value: 'Ailemle', 
-          title: translations[language].withFamily, 
-          description: '', 
-          icon: 'person2' 
-        },
-        { 
-          value: 'Arkadaşlarla veya ev arkadaşlarıyla', 
-          title: translations[language].withFriends, 
-          description: '', 
-          icon: 'person3' 
-        },
+        { value: 'Yalnız yaşıyorum', title: translations[language].alone, description: '', icon: 'person1' },
+        { value: 'Ailemle', title: translations[language].withFamily, description: '', icon: 'person2' },
+        { value: 'Arkadaşlarla veya ev arkadaşlarıyla', title: translations[language].withFriends, description: '', icon: 'person3' },
       ],
     },
   ];
@@ -437,7 +317,7 @@ const QuestionsStep = ({
 
   // Render different custom icons based on option type
   const renderIcon = (iconType, isSelected) => {
-    const iconColor = isSelected ? '#FFFFFF' : '#FFFFFF'; // Always white since outer circle is dark
+    const iconColor = isSelected ? '#FFFFFF' : '#FFFFFF';
     switch (iconType) {
       case 'house':
         return (
@@ -458,12 +338,12 @@ const QuestionsStep = ({
               padding: 3,
             }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={{ width: 5, height: 5, backgroundColor: '#333' }} />
-                <View style={{ width: 5, height: 5, backgroundColor: '#333' }} />
+                <View style={{ width: 5, height: 5, backgroundColor: COLORS[theme].white }} />
+                <View style={{ width: 5, height: 5, backgroundColor: COLORS[theme].white }} />
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={{ width: 5, height: 5, backgroundColor: '#333' }} />
-                <View style={{ width: 5, height: 5, backgroundColor: '#333' }} />
+                <View style={{ width: 5, height: 5, backgroundColor: COLORS[theme].white }} />
+                <View style={{ width: 5, height: 5, backgroundColor: COLORS[theme].white }} />
               </View>
             </View>
           </View>
@@ -549,7 +429,7 @@ const QuestionsStep = ({
               justifyContent: 'center',
               alignItems: 'center',
             }}>
-              <StarIcon size={20} color={iconColor} />
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: iconColor }}>★</Text>
             </View>
           </View>
         );
@@ -561,8 +441,8 @@ const QuestionsStep = ({
               width: 30,
               justifyContent: 'space-between',
             }}>
-              <StarIcon size={16} color={iconColor} />
-              <StarIcon size={16} color={iconColor} />
+              <Text style={{ fontSize: 16, fontWeight: 'bold', color: iconColor }}>★</Text>
+              <Text style={{ fontSize: 16, fontWeight: 'bold', color: iconColor }}>★</Text>
             </View>
           </View>
         );
@@ -574,9 +454,9 @@ const QuestionsStep = ({
               width: 36,
               justifyContent: 'space-between',
             }}>
-              <StarIcon size={14} color={iconColor} />
-              <StarIcon size={14} color={iconColor} />
-              <StarIcon size={14} color={iconColor} />
+              <Text style={{ fontSize: 14, fontWeight: 'bold', color: iconColor }}>★</Text>
+              <Text style={{ fontSize: 14, fontWeight: 'bold', color: iconColor }}>★</Text>
+              <Text style={{ fontSize: 14, fontWeight: 'bold', color: iconColor }}>★</Text>
             </View>
           </View>
         );
