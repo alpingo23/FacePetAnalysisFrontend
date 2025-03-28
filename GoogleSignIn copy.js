@@ -7,9 +7,6 @@ import {
   ActivityIndicator,
   StyleSheet,
   Alert,
-  Image,
-  SafeAreaView,
-  Dimensions,
 } from 'react-native';
 import {
   GoogleSignin,
@@ -17,12 +14,10 @@ import {
 } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
 
-const { width, height } = Dimensions.get('window');
-
 const GoogleSignIn = ({ onSignInSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
 
-  // Enhanced logging function
+  // Log fonksiyonunu özelleştirme
   const log = (message, data = null) => {
     if (data) {
       console.log(`[GOOGLE_SIGNIN] ${message}:`, JSON.stringify(data, null, 2));
@@ -50,7 +45,7 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
       const userInfo = await GoogleSignin.signInSilently();
       log('User already signed in', userInfo);
 
-      // Check for idToken
+      // idToken'ın varlığını kontrol et
       let idToken = userInfo.idToken;
       if (!idToken) {
         log('idToken missing, attempting to get tokens...');
@@ -63,7 +58,7 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
         throw new Error('idToken is still missing after getTokens');
       }
 
-      // Sign in to Firebase with the Google idToken
+      // idToken ile Firebase Authentication'a kullanıcıyı kaydet
       log('Creating Google credential with idToken', { idToken });
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
       const firebaseUserCredential = await auth().signInWithCredential(googleCredential);
@@ -88,7 +83,7 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
       const userInfo = await GoogleSignin.signIn();
       log('Google Sign-In successful', userInfo);
 
-      // Check for idToken
+      // idToken'ın varlığını kontrol et
       let idToken = userInfo.idToken;
       if (!idToken) {
         log('idToken missing, attempting to get tokens...');
@@ -101,7 +96,7 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
         throw new Error('idToken is still missing after getTokens');
       }
 
-      // Sign in to Firebase with the Google idToken
+      // idToken ile Firebase Authentication'a kullanıcıyı kaydet
       log('Creating Google credential with idToken', { idToken });
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
       const firebaseUserCredential = await auth().signInWithCredential(googleCredential);
@@ -127,90 +122,49 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      backgroundColor: '#000000',
-      paddingTop: height * 0.1,
-      paddingHorizontal: width * 0.06,
-    },
-    headingContainer: {
-      width: '100%',
-      marginBottom: height * 0.1,
-    },
-    title: {
-      fontSize: Math.min(width * 0.09, 35),
-      color: '#FFFFFF',
-      fontWeight: '700',
-      letterSpacing: 0.2,
-      marginBottom: height * 0.015,
-    },
-    subtitle: {
-      fontSize: Math.min(width * 0.04, 16),
-      color: '#9E9E9E',
-      lineHeight: Math.min(width * 0.055, 22),
-    },
-    googleButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'flex-start',
-      backgroundColor: '#FFFFFF',
-      width: '100%',
-      height: height * 0.07,
-      borderRadius: 999,
-      paddingHorizontal: width * 0.05,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 4,
-    },
-    googleIconContainer: {
-      width: width * 0.06,
-      height: width * 0.06,
-      marginRight: width * 0.06,
       justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: '#2C2F33',
     },
-    buttonText: {
-      color: '#000000',
-      fontSize: Math.min(width * 0.04, 16),
-      fontWeight: '500',
-      flex: 1,
+    title: {
+      fontSize: 24,
+      color: '#FFFFFF',
+      marginBottom: 20,
+      fontWeight: 'bold',
     },
-    loadingContainer: {
-      position: 'absolute',
-      right: width * 0.05,
+    signInButton: {
+      backgroundColor: '#6C63FF',
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.2,
+      shadowRadius: 5,
+      elevation: 4,
+    },
+    signInButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
     },
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headingContainer}>
-        <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>Create an account to match your face with your pet's</Text>
-      </View>
-      
+    <View style={styles.container}>
+      <Text style={styles.title}>Please Sign In with Google</Text>
       <TouchableOpacity
-        style={styles.googleButton}
+        style={styles.signInButton}
         onPress={signIn}
         disabled={isLoading}
-        activeOpacity={0.8}
       >
-        <View style={styles.googleIconContainer}>
-          <Image 
-            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }} 
-            style={{ width: width * 0.06, height: width * 0.06 }}
-            resizeMode="contain"
-          />
-        </View>
-        <Text style={styles.buttonText}>Sign in with Google</Text>
-        {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#4285F4" />
-          </View>
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <Text style={styles.signInButtonText}>Sign In with Google</Text>
         )}
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 };
 
