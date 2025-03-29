@@ -10,6 +10,7 @@ import {
   Image,
   SafeAreaView,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import {
   GoogleSignin,
@@ -130,12 +131,18 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
       justifyContent: 'flex-start',
       alignItems: 'center',
       backgroundColor: '#000000',
-      paddingTop: height * 0.1,
+      paddingTop: height * 0.08,
       paddingHorizontal: width * 0.06,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      width: '100%',
+      alignItems: 'center',
     },
     headingContainer: {
       width: '100%',
-      marginBottom: height * 0.1,
+      marginBottom: height * 0.05,
+      alignItems: 'center',
     },
     title: {
       fontSize: Math.min(width * 0.09, 35),
@@ -143,11 +150,29 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
       fontWeight: '700',
       letterSpacing: 0.2,
       marginBottom: height * 0.015,
+      textAlign: 'center',
     },
     subtitle: {
       fontSize: Math.min(width * 0.04, 16),
       color: '#9E9E9E',
       lineHeight: Math.min(width * 0.055, 22),
+      textAlign: 'center',
+      marginBottom: height * 0.04,
+    },
+    infoContainer: {
+      width: '100%',
+      marginBottom: height * 0.06,
+      backgroundColor: 'rgba(108, 99, 255, 0.1)',
+      borderRadius: 12,
+      padding: width * 0.05,
+      borderWidth: 1,
+      borderColor: 'rgba(108, 99, 255, 0.3)',
+    },
+    infoText: {
+      fontSize: Math.min(width * 0.038, 15),
+      color: '#CCCCCC',
+      lineHeight: Math.min(width * 0.055, 22),
+      textAlign: 'center',
     },
     googleButton: {
       flexDirection: 'row',
@@ -163,6 +188,7 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
       shadowOpacity: 0.2,
       shadowRadius: 4,
       elevation: 4,
+      marginBottom: height * 0.02,
     },
     googleIconContainer: {
       width: width * 0.06,
@@ -181,35 +207,59 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
       position: 'absolute',
       right: width * 0.05,
     },
+    termsText: {
+      fontSize: Math.min(width * 0.03, 12),
+      color: '#808080',
+      textAlign: 'center',
+      marginTop: height * 0.02,
+      lineHeight: Math.min(width * 0.045, 18),
+      paddingHorizontal: width * 0.05,
+    },
+    highlight: {
+      color: '#6C63FF',
+      fontWeight: '600',
+    },
   });
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headingContainer}>
-        <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>Create an account to match your face with your pet's</Text>
-      </View>
-      
-      <TouchableOpacity
-        style={styles.googleButton}
-        onPress={signIn}
-        disabled={isLoading}
-        activeOpacity={0.8}
-      >
-        <View style={styles.googleIconContainer}>
-          <Image 
-            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }} 
-            style={{ width: width * 0.06, height: width * 0.06 }}
-            resizeMode="contain"
-          />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.headingContainer}>
+          <Text style={styles.title}>Create your account</Text>
         </View>
-        <Text style={styles.buttonText}>Sign in with Google</Text>
-        {isLoading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#4285F4" />
+
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoText}>
+            Our AI-powered app analyzes your facial features and your pet's characteristics to reveal surprising connections and compatibility insights.
+          </Text>
+        </View>
+        
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={signIn}
+          disabled={isLoading}
+          activeOpacity={0.8}
+        >
+          <View style={styles.googleIconContainer}>
+            <Image 
+              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }} 
+              style={{ width: width * 0.06, height: width * 0.06 }}
+              resizeMode="contain"
+            />
           </View>
-        )}
-      </TouchableOpacity>
+          <Text style={styles.buttonText}>Sign in with Google</Text>
+          {isLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#4285F4" />
+            </View>
+          )}
+        </TouchableOpacity>
+        
+        <Text style={styles.termsText}>
+          By continuing, you agree to our Terms of Service and Privacy Policy.
+          Your data is secure and will only be used to provide the Face Pet Match experience.
+        </Text>
+      </ScrollView>
     </SafeAreaView>
   );
 };

@@ -8,14 +8,14 @@ const getStyles = (COLORS, SHADOWS) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#000', // Siyah arka plan
+      backgroundColor: '#000',
     },
     safeArea: {
       flex: 1,
     },
     header: {
-      backgroundColor: COLORS.primary, // COLORS[theme].primary yerine doğrudan COLORS.primary
-      padding: 18,
+      backgroundColor: COLORS.primary,
+      padding: 20,
       alignItems: 'center',
       borderBottomLeftRadius: 20,
       borderBottomRightRadius: 20,
@@ -26,40 +26,45 @@ const getStyles = (COLORS, SHADOWS) =>
       justifyContent: 'space-between',
       alignItems: 'center',
       width: '100%',
-      marginBottom: 10,
     },
     languageWrapper: {
       width: 40,
       alignItems: 'flex-start',
+      justifyContent: 'center',
     },
     logoContainer: {
-      alignItems: 'center',
+      width: 40,
+      alignItems: 'flex-end',
       justifyContent: 'center',
     },
     smallLogo: {
-      width: 50,
-      height: 50,
+      width: 40,
+      height: 40,
     },
     headerTitle: {
-      color: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
-      fontSize: 26,
+      color: COLORS.dark,
+      fontSize: 20,
       fontWeight: 'bold',
       letterSpacing: 0.5,
+      textAlign: 'center',
+      flex: 1,
     },
     main: {
       padding: 18,
       width: '100%',
+      alignItems: 'center', // İçeriği yatayda ortalar
     },
     stepContainer: {
       marginBottom: 25,
       width: '100%',
       paddingHorizontal: 15,
+      alignItems: 'center', // İçeriği yatayda ortalar
     },
     stepTitle: {
       fontSize: 22,
       textAlign: 'center',
       marginBottom: 24,
-      color: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
+      color: COLORS.dark,
       fontWeight: 'bold',
       letterSpacing: 0.5,
     },
@@ -75,7 +80,7 @@ const getStyles = (COLORS, SHADOWS) =>
       width: '100%',
     },
     actionButton: {
-      backgroundColor: COLORS.primary, // COLORS[theme].primary yerine doğrudan COLORS.primary
+      backgroundColor: COLORS.primary,
       paddingVertical: 8,
       paddingHorizontal: 15,
       borderRadius: 25,
@@ -85,14 +90,14 @@ const getStyles = (COLORS, SHADOWS) =>
       ...SHADOWS.colored,
     },
     actionButtonText: {
-      color: COLORS.white, // COLORS[theme].white yerine doğrudan COLORS.white
+      color: COLORS.white,
       fontSize: 14,
       fontWeight: 'bold',
       textAlign: 'center',
       numberOfLines: 2,
     },
     continueButton: {
-      backgroundColor: COLORS.success, // COLORS[theme].success yerine doğrudan COLORS.success
+      backgroundColor: COLORS.success,
       paddingVertical: 15,
       paddingHorizontal: 30,
       borderRadius: 50,
@@ -101,7 +106,7 @@ const getStyles = (COLORS, SHADOWS) =>
       ...SHADOWS.medium,
     },
     backButton: {
-      backgroundColor: COLORS.accent, // COLORS[theme].accent yerine doğrudan COLORS.accent
+      backgroundColor: COLORS.accent,
       paddingVertical: 15,
       paddingHorizontal: 30,
       borderRadius: 50,
@@ -124,7 +129,7 @@ const getStyles = (COLORS, SHADOWS) =>
       borderRadius: 20,
       ...SHADOWS.medium,
       borderWidth: 3,
-      borderColor: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
+      borderColor: COLORS.dark,
     },
     progressContainer: {
       margin: 25,
@@ -139,13 +144,13 @@ const getStyles = (COLORS, SHADOWS) =>
     },
     progressBar: {
       height: '100%',
-      backgroundColor: COLORS.primary, // COLORS[theme].primary yerine doğrudan COLORS.primary
+      backgroundColor: COLORS.primary,
       borderRadius: 10,
     },
     progressText: {
       textAlign: 'center',
       fontSize: 16,
-      color: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
+      color: COLORS.dark,
       fontWeight: '600',
       marginTop: 8,
     },
@@ -166,7 +171,7 @@ const getStyles = (COLORS, SHADOWS) =>
     analysisTitle: {
       textAlign: 'center',
       marginBottom: 15,
-      color: COLORS.primary, // COLORS[theme].primary yerine doğrudan COLORS.primary
+      color: COLORS.primary,
       fontSize: 20,
       fontWeight: 'bold',
     },
@@ -198,7 +203,7 @@ const getStyles = (COLORS, SHADOWS) =>
       borderRadius: 15,
     },
     loadingText: {
-      color: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
+      color: COLORS.dark,
       fontSize: 20,
       marginTop: 15,
       fontWeight: 'bold',
@@ -213,7 +218,7 @@ const getStyles = (COLORS, SHADOWS) =>
     compatibilityTitle: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
+      color: COLORS.dark,
       textAlign: 'center',
       marginBottom: 10,
     },
@@ -228,7 +233,7 @@ const getStyles = (COLORS, SHADOWS) =>
       height: 50,
       borderRadius: 25,
       borderWidth: 2,
-      borderColor: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
+      borderColor: COLORS.dark,
     },
     compatibilityScoreText: {
       fontSize: 24,
@@ -236,17 +241,17 @@ const getStyles = (COLORS, SHADOWS) =>
     },
     compatibilityMessage: {
       fontSize: 14,
-      color: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
+      color: COLORS.dark,
       textAlign: 'center',
       lineHeight: 20,
     },
     detailCard: {
-      backgroundColor: COLORS.white, // COLORS[theme].white yerine doğrudan COLORS.white
+      backgroundColor: COLORS.white,
       borderRadius: 15,
       padding: 15,
       marginBottom: 12,
       borderLeftWidth: 4,
-      borderLeftColor: COLORS.primary, // COLORS[theme].primary yerine doğrudan COLORS.primary
+      borderLeftColor: COLORS.primary,
       ...SHADOWS.small,
     },
     detailCardHeader: {
@@ -258,7 +263,7 @@ const getStyles = (COLORS, SHADOWS) =>
     detailCardTitle: {
       fontSize: 16,
       fontWeight: 'bold',
-      color: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
+      color: COLORS.dark,
       flex: 1,
     },
     detailCardScore: {
@@ -267,7 +272,7 @@ const getStyles = (COLORS, SHADOWS) =>
     },
     detailCardDescription: {
       fontSize: 14,
-      color: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
+      color: COLORS.dark,
       marginTop: 8,
       lineHeight: 20,
     },
@@ -279,7 +284,7 @@ const getStyles = (COLORS, SHADOWS) =>
       ...SHADOWS.small,
     },
     infoCard: {
-      backgroundColor: COLORS.white, // COLORS[theme].white yerine doğrudan COLORS.white
+      backgroundColor: COLORS.white,
       borderRadius: 15,
       padding: 15,
       marginBottom: 15,
@@ -294,12 +299,12 @@ const getStyles = (COLORS, SHADOWS) =>
     infoLabel: {
       fontSize: 16,
       fontWeight: 'bold',
-      color: COLORS.dark, // COLORS[theme].dark yerine doğrudan COLORS.dark
+      color: COLORS.dark,
     },
     infoValue: {
       fontSize: 16,
       fontWeight: 'bold',
-      color: COLORS.primary, // COLORS[theme].primary yerine doğrudan COLORS.primary
+      color: COLORS.primary,
     },
     buttonContainer: {
       flexDirection: 'row',
@@ -309,7 +314,7 @@ const getStyles = (COLORS, SHADOWS) =>
       gap: 10,
     },
     greenButton: {
-      backgroundColor: COLORS.success, // COLORS[theme].success yerine doğrudan COLORS.success
+      backgroundColor: COLORS.success,
       borderRadius: 10,
       paddingVertical: 15,
       marginVertical: 10,
@@ -318,7 +323,7 @@ const getStyles = (COLORS, SHADOWS) =>
       flex: 1,
     },
     redButton: {
-      backgroundColor: COLORS.danger, // COLORS[theme].danger yerine doğrudan COLORS.danger
+      backgroundColor: COLORS.danger,
       borderRadius: 10,
       paddingVertical: 15,
       marginVertical: 10,
@@ -327,7 +332,7 @@ const getStyles = (COLORS, SHADOWS) =>
       flex: 1,
     },
     unlockButton: {
-      backgroundColor: COLORS.primary, // COLORS[theme].primary yerine doğrudan COLORS.primary
+      backgroundColor: COLORS.primary,
       borderRadius: 10,
       paddingVertical: 15,
       marginVertical: 10,
@@ -335,10 +340,10 @@ const getStyles = (COLORS, SHADOWS) =>
       ...SHADOWS.medium,
       flex: 1,
       borderWidth: 2,
-      borderColor: COLORS.accent, // COLORS[theme].accent yerine doğrudan COLORS.accent
+      borderColor: COLORS.accent,
     },
     errorText: {
-      color: COLORS.danger, // COLORS[theme].danger yerine doğrudan COLORS.danger
+      color: COLORS.danger,
       textAlign: 'center',
       fontSize: 16,
       backgroundColor: 'rgba(242, 95, 92, 0.2)',
@@ -348,7 +353,7 @@ const getStyles = (COLORS, SHADOWS) =>
       fontWeight: 'bold',
     },
     warningText: {
-      color: COLORS.warning, // COLORS[theme].warning yerine doğrudan COLORS.warning
+      color: COLORS.warning,
       textAlign: 'center',
       fontSize: 16,
       backgroundColor: 'rgba(255, 0, 0, 0.23)',
@@ -529,7 +534,6 @@ const getStyles = (COLORS, SHADOWS) =>
       fontWeight: 'bold',
       textAlign: 'center',
     },
-    // ScrollView stilleri (Eklendi)
     scrollView: {
       flex: 1,
     },
@@ -538,7 +542,7 @@ const getStyles = (COLORS, SHADOWS) =>
       paddingTop: 20,
       paddingBottom: 80,
       minHeight: height - 150,
-      alignItems: 'center', // alignItems özelliği contentContainerStyle içinde tanımlı
+      alignItems: 'center',
     },
   });
 

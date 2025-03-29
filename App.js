@@ -1,4 +1,3 @@
-import GoogleSignIn from './GoogleSignIn';
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import calculateCompatibilityScore from './CompatibilityScore.js';
@@ -31,17 +30,39 @@ import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { InterstitialAd, AdEventType, BannerAdSize } from 'react-native-google-mobile-ads';
 import mobileAds from 'react-native-google-mobile-ads';
 import BannerAdComponent from './BannerAdComponent.js';
-import { GoogleSignin } from '@react-native-google-signin/google-signin'; // Import GoogleSignin
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import GoogleSignIn from './GoogleSignIn';
+import IntroScreens from './IntroScreens';
+
+// Firebase yapılandırması
+import { initializeApp } from '@react-native-firebase/app';
 
 const dogTraits = require('./dogTraits.json');
 
-// Configure Google Sign-In with the Web Client ID from Firebase
-GoogleSignin.configure({
-  webClientId: '1051097822472-jfr8jn1qs5q0clh3rlmrs6j8ugsl34d0.apps.googleusercontent.com', // Replace with the Web Client ID from Firebase
-  offlineAccess: true,
-    scopes: ['profile', 'email'], // Kullanıcı bilgilerine erişim için gerekli kapsamlar
+// Firebase yapılandırması (Firebase Console'dan alın)
+const firebaseConfig = {
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_AUTH_DOMAIN',
+  projectId: 'YOUR_PROJECT_ID',
+  storageBucket: 'YOUR_STORAGE_BUCKET',
+  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+  appId: 'YOUR_APP_ID',
+};
 
-});
+// Firebase uygulamasını başlat
+let app;
+try {
+  app = initializeApp(firebaseConfig);
+  console.log('Firebase app initialized successfully');
+} catch (error) {
+  if (error.message.includes('already exists')) {
+    console.log('Firebase app already initialized');
+    app = initializeApp(firebaseConfig, { name: '[DEFAULT]' });
+  } else {
+    console.error('Firebase initialization error:', error);
+    throw error;
+  }
+}
 
 // Screen width for responsive design
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -107,11 +128,11 @@ mobileAds()
     console.log('[AD] Google Mobile Ads initialized:', adapterStatuses);
   });
 
-// Banner Ad birimini platforma göre belirliyoruz
-const bannerAdUnitId = Platform.OS === 'ios' ? 'ca-app-pub-8034970392301400/5715662429' : 'ca-app-pub-8034970392301400/3849451955';
+// Banner Ad birimini platforma göre belirliyoruz (Test ID'leri kullanıldı)
+const bannerAdUnitId = Platform.OS === 'ios' ? 'ca-app-pub-3940256099942544/2934735716' : 'ca-app-pub-3940256099942544/6300978111';
 
 const CombinedAnalysisApp = () => {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0); // Step 0 is IntroScreens
   const [faceImage, setFaceImage] = useState(null);
   const [petImage, setPetImage] = useState(null);
   const [petFile, setPetFile] = useState(null);
@@ -138,15 +159,10 @@ const CombinedAnalysisApp = () => {
     hobbyTime: undefined,
     livingWith: undefined,
   });
-  const handleSignInSuccess = (userInfo) => {
-    setIsSignedIn(true);
-    setCurrentStep(1);
-  };
   const [isPaid, setIsPaid] = useState(false);
 
-  // Interstitial Ad (useRef ile sabit tutuyoruz)
   const interstitialAdRef = useRef(InterstitialAd.createForAdRequest(
-    Platform.OS === 'ios' ? 'ca-app-pub-8034970392301400/2845956506' : 'ca-app-pub-8034970392301400/9435114266'
+    Platform.OS === 'ios' ? 'ca-app-pub-3940256099942544/4411468910' : 'ca-app-pub-3940256099942544/1033173712' // Test ID'leri
   ));
 
   const animationTimer = useRef(null);
@@ -155,6 +171,11 @@ const CombinedAnalysisApp = () => {
   // Get styles with fixed dark theme
   const styles = getStyles(COLORS, SHADOWS);
 
+  const handleSignInSuccess = (userInfo) => {
+    setIsSignedIn(true);
+    setCurrentStep(2); // Move to Pet Upload after sign-in
+  };
+
   useEffect(() => {
     blinkInterval.current = setInterval(() => {
       setIsLVisible((prev) => !prev);
@@ -162,7 +183,7 @@ const CombinedAnalysisApp = () => {
 
     const handleAppStateChange = (nextAppState) => {
       console.log('[APP] AppState changed to:', nextAppState);
-      if (nextAppState === 'active' && currentStep === 5 && !showResultsPopup) {
+      if (nextAppState === 'active' && currentStep === 6 && !showResultsPopup) {
         setShowResultsPopup(true);
       }
     };
@@ -174,53 +195,55 @@ const CombinedAnalysisApp = () => {
       if (animationTimer.current) cancelAnimationFrame(animationTimer.current);
       subscription.remove();
     };
-  }, []);
+  }, [currentStep]);
 
-  // Interstitial Ad Event Listeners
+  // Interstitial Ad Event Listeners (Reklam yüklemeyi geciktirme)
   useEffect(() => {
-    const interstitialAd = interstitialAdRef.current;
+    if (currentStep !== 0) { // Yalnızca IntroScreens tamamlandıktan sonra reklam yükle
+      const interstitialAd = interstitialAdRef.current;
 
-    const unsubscribeLoaded = interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
-      console.log('[AD] Interstitial ad loaded successfully at:', Date.now());
-      setIsAdLoaded(true);
-      setIsAdLoading(false);
-    });
+      const unsubscribeLoaded = interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
+        console.log('[AD] Interstitial ad loaded successfully at:', Date.now());
+        setIsAdLoaded(true);
+        setIsAdLoading(false);
+      });
 
-    const unsubscribeError = interstitialAd.addAdEventListener(AdEventType.ERROR, (error) => {
-      console.log('[AD] Ad failed to load at:', Date.now(), 'Error:', error);
-      setIsAdLoaded(false);
-      setIsAdLoading(false);
-      setShowResultsPopup(true);
-    });
+      const unsubscribeError = interstitialAd.addAdEventListener(AdEventType.ERROR, (error) => {
+        console.log('[AD] Ad failed to load at:', Date.now(), 'Error:', error);
+        setIsAdLoaded(false);
+        setIsAdLoading(false);
+        setShowResultsPopup(true);
+      });
 
-    const unsubscribeClosed = interstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
-      console.log('[AD] Interstitial ad closed at:', Date.now());
-      setIsAdLoaded(false);
-      setIsAdLoading(true);
-      setShowResultsPopup(true);
-      setTimeout(() => {
-        console.log('[AD] Loading new interstitial ad after close at:', Date.now());
+      const unsubscribeClosed = interstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
+        console.log('[AD] Interstitial ad closed at:', Date.now());
+        setIsAdLoaded(false);
+        setIsAdLoading(true);
+        setShowResultsPopup(true);
+        setTimeout(() => {
+          console.log('[AD] Loading new interstitial ad after close at:', Date.now());
+          interstitialAd.load();
+        }, 100);
+      });
+
+      const unsubscribeOpened = interstitialAd.addAdEventListener(AdEventType.OPENED, () => {
+        console.log('[AD] Interstitial ad opened at:', Date.now());
+      });
+
+      if (!isAdLoading && !isAdLoaded) {
+        console.log('[AD] Initial loading of interstitial ad at:', Date.now());
+        setIsAdLoading(true);
         interstitialAd.load();
-      }, 100);
-    });
+      }
 
-    const unsubscribeOpened = interstitialAd.addAdEventListener(AdEventType.OPENED, () => {
-      console.log('[AD] Interstitial ad opened at:', Date.now());
-    });
-
-    if (!isAdLoading && !isAdLoaded) {
-      console.log('[AD] Initial loading of interstitial ad at:', Date.now());
-      setIsAdLoading(true);
-      interstitialAd.load();
+      return () => {
+        unsubscribeLoaded();
+        unsubscribeError();
+        unsubscribeClosed();
+        unsubscribeOpened();
+      };
     }
-
-    return () => {
-      unsubscribeLoaded();
-      unsubscribeError();
-      unsubscribeClosed();
-      unsubscribeOpened();
-    };
-  }, []);
+  }, [currentStep, isAdLoading, isAdLoaded]); // currentStep eklendi
 
   const formatBreedName = (breed) => {
     if (!breed) return translations[language].unknown || 'Unknown';
@@ -654,12 +677,12 @@ const CombinedAnalysisApp = () => {
       setError(translations[language].errorUploadFaceImage);
       return;
     }
-    setCurrentStep(3);
+    setCurrentStep(4); // Move to Questions step
   };
 
   const analyzeImages = async () => {
     setIsAnalyzing(true);
-    setCurrentStep(4);
+    setCurrentStep(5); // Move to Analysis step
     setAnalysisProgress(0);
     setError(null);
 
@@ -667,7 +690,7 @@ const CombinedAnalysisApp = () => {
 
     if (!faceDetections || !petResult) {
       setIsAnalyzing(false);
-      setCurrentStep(3);
+      setCurrentStep(4); // Back to Questions step if failed
       setError(translations[language].errorAnalysisFailed || 'Analysis failed. Please try again.');
       return;
     }
@@ -696,14 +719,14 @@ const CombinedAnalysisApp = () => {
             setShowResultsPopup(true);
           }, 5000);
         }
-        setCurrentStep(5);
+        setCurrentStep(6); // Move to Results step
       }
     };
     animate();
   };
 
   const resetAnalysis = () => {
-    setCurrentStep(1);
+    setCurrentStep(2); // Reset to Pet Upload step
     setFaceImage(null);
     setPetImage(null);
     setPetFile(null);
@@ -828,6 +851,14 @@ const CombinedAnalysisApp = () => {
     return lines;
   };
 
+  const renderIntroStep = () => (
+    <IntroScreens
+      onComplete={() => setCurrentStep(1)} // Move to Google Sign-In step
+      language={language}
+      translations={translations}
+    />
+  );
+
   const renderPetUploadStep = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>{translations[language].step1Title}</Text>
@@ -854,7 +885,7 @@ const CombinedAnalysisApp = () => {
       </View>
       <Text style={styles.warningText}>{translations[language].petUploadWarning}</Text>
       {petImage && (
-        <TouchableOpacity onPress={() => setCurrentStep(2)} style={styles.continueButton}>
+        <TouchableOpacity onPress={() => setCurrentStep(3)} style={styles.continueButton}>
           <Text style={styles.buttonText}>{translations[language].continueToFaceUpload}</Text>
         </TouchableOpacity>
       )}
@@ -893,7 +924,7 @@ const CombinedAnalysisApp = () => {
             <Text style={styles.buttonText}>{translations[language].startAnalysisButton}</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity onPress={() => setCurrentStep(1)} style={styles.backButton}>
+        <TouchableOpacity onPress={() => setCurrentStep(2)} style={styles.backButton}>
           <Text style={styles.buttonText}>{translations[language].goBackButton}</Text>
         </TouchableOpacity>
       </View>
@@ -910,7 +941,7 @@ const CombinedAnalysisApp = () => {
       userQuestions={userQuestions}
       setUserQuestions={setUserQuestions}
       onContinue={analyzeImages}
-      onBack={() => setCurrentStep(2)}
+      onBack={() => setCurrentStep(3)} // Back to Face Upload
       faceResult={optimizedFaceResult}
     />
   );
@@ -934,7 +965,6 @@ const CombinedAnalysisApp = () => {
               height: 300,
               position: 'relative'
             }]}>
-              {/* Outer white frame */}
               <View style={{
                 position: 'absolute',
                 width: 300,
@@ -944,8 +974,6 @@ const CombinedAnalysisApp = () => {
                 borderRadius: 20,
                 zIndex: 1
               }} />
-              
-              {/* Image with original settings */}
               <Image 
                 source={{ uri: faceImage }} 
                 style={{ 
@@ -1033,7 +1061,6 @@ const CombinedAnalysisApp = () => {
               height: 300,
               position: 'relative'
             }]}>
-              {/* Outer white frame */}
               <View style={{
                 position: 'absolute',
                 width: 300,
@@ -1043,8 +1070,6 @@ const CombinedAnalysisApp = () => {
                 borderRadius: 20,
                 zIndex: 1
               }} />
-              
-              {/* Image with original settings */}
               <Image 
                 source={{ uri: petImage }} 
                 style={{ 
@@ -1059,7 +1084,7 @@ const CombinedAnalysisApp = () => {
                   style={{
                     position: 'absolute',
                     left: petResult.detection.box.x,
-                    top: petResult.detection.box.y, // Fixed string to actual value
+                    top: petResult.detection.box.y,
                     width: petResult.detection.box.width,
                     height: petResult.detection.box.height,
                     borderWidth: 2,
@@ -1291,7 +1316,7 @@ const CombinedAnalysisApp = () => {
       petBreed: petResult?.predicted_label,
       onSeeMoreDetails: () => {
         setShowResultsPopup(false);
-        setCurrentStep(5);
+        setCurrentStep(6); // Move to Results step
       },
       translations,
       language,
@@ -1322,19 +1347,20 @@ const CombinedAnalysisApp = () => {
               <View style={styles.languageWrapper}>
                 <CustomLanguageSelector language={language} setLanguage={setLanguage} />
               </View>
+              <Text style={styles.headerTitle}>{translations[language].appTitle}</Text>
               <View style={styles.logoContainer}>
                 <Image source={require('./logo.png')} style={styles.smallLogo} resizeMode="contain" />
               </View>
             </View>
-            <Text style={styles.headerTitle}>{translations[language].appTitle}</Text>
           </View>
           <View style={styles.main}>
-            {currentStep === 0 && <GoogleSignIn onSignInSuccess={handleSignInSuccess} />}
-            {currentStep === 1 && renderPetUploadStep()}
-            {currentStep === 2 && renderFaceUploadStep()}
-            {currentStep === 3 && renderQuestionsStep()}
-            {currentStep === 4 && isAnalyzing && renderAnalysisStep()}
-            {currentStep === 5 && renderResultsStep()}
+            {currentStep === 0 && renderIntroStep()}
+            {currentStep === 1 && <GoogleSignIn onSignInSuccess={handleSignInSuccess} />}
+            {currentStep === 2 && renderPetUploadStep()}
+            {currentStep === 3 && renderFaceUploadStep()}
+            {currentStep === 4 && renderQuestionsStep()}
+            {currentStep === 5 && isAnalyzing && renderAnalysisStep()}
+            {currentStep === 6 && renderResultsStep()}
           </View>
         </ScrollView>
         <BannerAdComponent adUnitId={bannerAdUnitId} />
@@ -1352,4 +1378,6 @@ const getScoreColor = (score) => {
   return '#2ECC71';
 };
 
+// app nesnesini dışa aktar
+export { app };
 export default CombinedAnalysisApp;
