@@ -52,13 +52,16 @@ const getStyles = (COLORS, SHADOWS) =>
     main: {
       padding: 18,
       width: '100%',
-      alignItems: 'center', // İçeriği yatayda ortalar
+      alignItems: 'center',
     },
     stepContainer: {
       marginBottom: 25,
       width: '100%',
       paddingHorizontal: 15,
-      alignItems: 'center', // İçeriği yatayda ortalar
+      alignItems: 'center', // Bu özellik contentContainerStyle'a taşındı, burada kalabilir çünkü View bileşenlerinde sorun olmaz
+    },
+    scrollView: {
+      flex: 1,
     },
     stepTitle: {
       fontSize: 22,
@@ -533,9 +536,6 @@ const getStyles = (COLORS, SHADOWS) =>
       fontSize: Math.min(16, SCREEN_WIDTH * 0.04),
       fontWeight: 'bold',
       textAlign: 'center',
-    },
-    scrollView: {
-      flex: 1,
     },
     contentContainer: {
       paddingHorizontal: 20,

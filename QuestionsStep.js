@@ -137,7 +137,6 @@ const QuestionsStep = ({
         alignItems: 'center',
         marginRight: 15,
       },
-      // Icon styles
       singleDot: {
         width: 16,
         height: 16,
@@ -268,7 +267,7 @@ const QuestionsStep = ({
         borderTopColor: '#333',
       },
       nextButton: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: COLORS.primary, // Varsayılan renk
         height: 50,
         borderRadius: 25,
         justifyContent: 'center',
@@ -277,6 +276,9 @@ const QuestionsStep = ({
       },
       nextButtonDisabled: {
         backgroundColor: '#444',
+      },
+      nextButtonGreen: {
+        backgroundColor: COLORS.success, // Yeşil renk (son soruda bir şık seçildiğinde)
       },
       nextButtonText: {
         color: '#FFFFFF',
@@ -683,7 +685,11 @@ const QuestionsStep = ({
         {/* Next button as part of the scrollable content */}
         <View style={styles.nextButtonContainer}>
           <TouchableOpacity
-            style={[styles.nextButton, !isCurrentQuestionAnswered && styles.nextButtonDisabled]}
+            style={[
+              styles.nextButton,
+              !isCurrentQuestionAnswered && styles.nextButtonDisabled,
+              currentQuestionIndex === questions.length - 1 && isCurrentQuestionAnswered && styles.nextButtonGreen, // Son soruda ve bir şık seçildiğinde yeşil
+            ]}
             disabled={!isCurrentQuestionAnswered}
             onPress={handleNext}
           >

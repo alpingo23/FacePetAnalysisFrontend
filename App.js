@@ -943,6 +943,8 @@ const CombinedAnalysisApp = () => {
       onContinue={analyzeImages}
       onBack={() => setCurrentStep(3)} // Back to Face Upload
       faceResult={optimizedFaceResult}
+      showStartAnalysisButton={true} // Bu prop'un true olduğundan emin olalım
+
     />
   );
 
@@ -1109,7 +1111,7 @@ const CombinedAnalysisApp = () => {
           score: detail.score,
         }))
       : [];
-
+  
     const faceAnalysis = faceResult && faceResult[0]
       ? {
           age: faceResult[0].age || 30,
@@ -1121,7 +1123,7 @@ const CombinedAnalysisApp = () => {
           age: 30,
           expressions: { happy: 0, sad: 0, angry: 0, fearful: 0, disgusted: 0, surprised: 0, neutral: 0 },
         };
-
+  
     const petAnalysis = petResult
       ? {
           energy: petResult.energy || 50,
@@ -1135,19 +1137,23 @@ const CombinedAnalysisApp = () => {
           independence: 50,
           groomingNeed: 50,
         };
-
+  
     const energyAndHappiness = faceAnalysis.expressions.happy || 50;
     const emotionAndExpression = Object.values(faceAnalysis.expressions).reduce((sum, value) => sum + value, 0) / 7 || 50;
     const environment = userQuestions.hoursAtHome === 'more_than_8' ? 80 : 50;
-
+  
     return (
-      <ScrollView style={[styles.stepContainer, { backgroundColor: '#000' }]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={[styles.scrollView, { backgroundColor: '#000' }]} // style prop'unda yalnızca ScrollView'in kendi stilleri
+        contentContainerStyle={styles.stepContainer} // Düzen özellikleri contentContainerStyle'a taşındı
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.resultsHeader}>
           <Text style={styles.eyesIcon}>👀</Text>
           <Text style={styles.resultsTitle}>Reveal your results</Text>
         </View>
         <Text style={styles.resultsSubtitle}>
-          {translations[language].inviteFriendsOrGetPro || 'Invite 3 friends or get Umax Pro to view your results'}
+          {translations[language].inviteFriendsOrGetPro || 'Invite 3 friends or get Pro+ to view your results'}
         </Text>
         <View style={styles.imagesContainer}>
           <View style={styles.imageWithLabel}>
@@ -1282,7 +1288,7 @@ const CombinedAnalysisApp = () => {
         </View>
         <View style={styles.actionsButtonContainer}>
           <TouchableOpacity style={styles.getProButton}>
-            <Text style={styles.buttonText}>💪 Get Umax Pro</Text>
+            <Text style={styles.buttonText}>💪 Get Pro+</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.inviteFriendsButton}>
             <Text style={styles.inviteFriendsButtonText}>Invite 3 Friends</Text>
