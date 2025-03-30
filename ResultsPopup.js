@@ -20,8 +20,10 @@ const ResultsPopup = ({
   onClose,
   compatibilityScore,
   details,
-  petImage,
-  faceImage,
+  petImage, // İlk analiz için base64 string
+  faceImage, // İlk analiz için base64 string
+  petImageUrl, // Önceki sonuçlar için Storage URL
+  faceImageUrl, // Önceki sonuçlar için Storage URL
   petBreed,
   onSeeMoreDetails,
   translations,
@@ -30,14 +32,21 @@ const ResultsPopup = ({
   faceResult,
   petResult,
 }) => {
-  console.log('[ResultsPopup] FILE VERSION: 2025-03-26-v3 - Fixed expressions rendering issue');
+  console.log('[ResultsPopup] FILE VERSION: 2025-03-30-v5 - Supports both base64 and Storage URLs');
+  console.log('[ResultsPopup] petImage:', petImage);
+  console.log('[ResultsPopup] faceImage:', faceImage);
+  console.log('[ResultsPopup] petImageUrl:', petImageUrl);
+  console.log('[ResultsPopup] faceImageUrl:', faceImageUrl);
   console.log('[ResultsPopup] userQuestions:', userQuestions);
   console.log('[ResultsPopup] faceResult:', faceResult);
   console.log('[ResultsPopup] petResult:', petResult);
-  console.log('[ResultsPopup] Version Check: Using updated ResultsPopup.js with fixed expressions rendering');
 
   const flatListRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Resim kaynağını belirle: Önce base64 varsa onu kullan, yoksa URL'yi
+  const petImageSource = petImage || petImageUrl;
+  const faceImageSource = faceImage || faceImageUrl;
 
   // Function to determine the color based on the score
   const getScoreColor = (score) => {
@@ -125,7 +134,7 @@ const ResultsPopup = ({
         traits: petResult.traits || ['Friendly', 'Energetic'],
       }
     : {
-        breed: 'Unknown',
+        breed: formatBreedName(petBreed),
         energy: 50,
         socialNeed: 50,
         independence: 50,
@@ -142,7 +151,7 @@ const ResultsPopup = ({
     { type: 'overall', data: { compatibilityScore, details: formattedDetails } }, // First slide: Overall
     { type: 'faceAnalysis', data: faceAnalysis }, // Second slide: Face Analysis
     { type: 'petAnalysis', data: petAnalysis }, // Third slide: Pet Analysis
-    ...formattedCategoryDetails.map((detail) => ({ type: 'category', data: detail })), // Subsequent slides: Compatibility Categories
+    ...formattedCategoryDetails.map((detail) => ({ type: 'category', data: detail })), // Subsequent slides: Categories
   ];
 
   // Render a progress bar for scores
@@ -182,17 +191,15 @@ const ResultsPopup = ({
           {translations[language].overallScore || 'Overall'}
         </Text>
 
-        {/* MODIFIED: First show the score and progress bar */}
         <Text style={[styles.scoreText, { color: getScoreColor(compatibilityScore) }]}>
           {compatibilityScore || 0}
         </Text>
         {renderProgressBar(compatibilityScore || 0, getScoreColor(compatibilityScore))}
 
-        {/* MODIFIED: Then show the images */}
         <View style={styles.imagesContainer}>
           <View style={styles.imageWithLabel}>
-            {petImage ? (
-              <Image source={{ uri: petImage }} style={styles.circularImage} resizeMode="cover" />
+            {petImageSource ? (
+              <Image source={{ uri: petImageSource }} style={styles.circularImage} resizeMode="cover" />
             ) : (
               <Text style={styles.imageLabel}>
                 {translations[language].errorPetImageNotAvailable || 'Pet image not available'}
@@ -203,8 +210,8 @@ const ResultsPopup = ({
             </Text>
           </View>
           <View style={styles.imageWithLabel}>
-            {faceImage ? (
-              <Image source={{ uri: faceImage }} style={styles.circularImage} resizeMode="cover" />
+            {faceImageSource ? (
+              <Image source={{ uri: faceImageSource }} style={styles.circularImage} resizeMode="cover" />
             ) : (
               <Text style={styles.imageLabel}>
                 {translations[language].errorFaceImageNotAvailable || 'Face image not available'}
@@ -273,7 +280,6 @@ const ResultsPopup = ({
     console.log('[ResultsPopup] Rendering Face Analysis Slide...');
     console.log('[renderFaceAnalysisSlide] faceAnalysis:', faceAnalysis);
 
-    // Check if face analysis data exists
     if (!faceAnalysis || !faceAnalysis.expressions) {
       return (
         <ScrollView contentContainerStyle={styles.slide}>
@@ -287,27 +293,23 @@ const ResultsPopup = ({
       );
     }
 
-    // Process expressions data
     let expressionEntries = [];
     if (Array.isArray(faceAnalysis.expressions)) {
-      // Eğer expressions bir dizi ise (optimizedFaceResult formatı: [{ expression, value }])
       expressionEntries = faceAnalysis.expressions.map(item => [
         item.expression,
-        parseFloat(item.value), // Zaten % formatında geliyor, direkt parseFloat ile alıyoruz
+        parseFloat(item.value),
       ]);
     } else if (typeof faceAnalysis.expressions === 'object') {
-      // Eğer expressions bir nesne ise ({ happy: 0, sad: 0, ... })
       expressionEntries = Object.entries(faceAnalysis.expressions).map(([key, value]) => [
         key,
-        parseFloat(value) * 100, // 0-1 aralığından %'ye çevir
+        parseFloat(value) * 100,
       ]);
     }
 
-    // Sort and get only top 3 expressions
     expressionEntries = expressionEntries
       .map(([expression, value]) => [
         expression,
-        isNaN(value) ? 0 : value, // NaN ise 0 kullan
+        isNaN(value) ? 0 : value,
       ])
       .sort((a, b) => b[1] - a[1]);
 
@@ -320,8 +322,8 @@ const ResultsPopup = ({
         </Text>
 
         <View style={styles.imageWithLabel}>
-          {faceImage ? (
-            <Image source={{ uri: faceImage }} style={styles.circularImage} resizeMode="cover" />
+          {faceImageSource ? (
+            <Image source={{ uri: faceImageSource }} style={styles.circularImage} resizeMode="cover" />
           ) : (
             <Text style={styles.imageLabel}>
               {translations[language].errorFaceImageNotAvailable || 'Face image not available'}
@@ -331,7 +333,6 @@ const ResultsPopup = ({
         </View>
 
         <View style={styles.analysisDetails}>
-          {/* Age and Gender info */}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>
               {translations[language].ageLabel || 'Age'}:
@@ -346,14 +347,12 @@ const ResultsPopup = ({
             <Text style={styles.infoValue}>{faceAnalysis.gender || 'N/A'}</Text>
           </View>
 
-          {/* Expressions Section */}
           <Text style={styles.expressionSectionTitle}>
             {translations[language].expressionLabel || 'Top Expressions'}
           </Text>
           
           {topExpressions.length > 0 ? (
             topExpressions.map(([expression, value], index) => {
-              // Get translated or formatted expression name
               const expressionLabel = 
                 translations[language]?.expressions?.[expression]
                   ? translations[language].expressions[expression].charAt(0).toUpperCase() +
@@ -399,8 +398,8 @@ const ResultsPopup = ({
         </Text>
 
         <View style={styles.imageWithLabel}>
-          {petImage ? (
-            <Image source={{ uri: petImage }} style={styles.circularImage} resizeMode="cover" />
+          {petImageSource ? (
+            <Image source={{ uri: petImageSource }} style={styles.circularImage} resizeMode="cover" />
           ) : (
             <Text style={styles.imageLabel}>
               {translations[language].errorPetImageNotAvailable || 'Pet image not available'}
@@ -460,15 +459,13 @@ const ResultsPopup = ({
       <ScrollView contentContainerStyle={styles.slide}>
         <Text style={[styles.categoryTitle, { color: getScoreColor(score) }]}>{title}</Text>
 
-        {/* MODIFIED: First show the score and progress bar */}
         <Text style={[styles.scoreText, { color: getScoreColor(score) }]}>{score}</Text>
         {renderProgressBar(score, getScoreColor(score))}
 
-        {/* MODIFIED: Then show the images */}
         <View style={styles.imagesContainer}>
           <View style={styles.imageWithLabel}>
-            {petImage ? (
-              <Image source={{ uri: petImage }} style={styles.circularImage} resizeMode="cover" />
+            {petImageSource ? (
+              <Image source={{ uri: petImageSource }} style={styles.circularImage} resizeMode="cover" />
             ) : (
               <Text style={styles.imageLabel}>
                 {translations[language].errorPetImageNotAvailable || 'Pet image not available'}
@@ -479,8 +476,8 @@ const ResultsPopup = ({
             </Text>
           </View>
           <View style={styles.imageWithLabel}>
-            {faceImage ? (
-              <Image source={{ uri: faceImage }} style={styles.circularImage} resizeMode="cover" />
+            {faceImageSource ? (
+              <Image source={{ uri: faceImageSource }} style={styles.circularImage} resizeMode="cover" />
             ) : (
               <Text style={styles.imageLabel}>
                 {translations[language].errorFaceImageNotAvailable || 'Face image not available'}
@@ -530,7 +527,6 @@ const ResultsPopup = ({
       onRequestClose={() => {
         console.log('Modal onRequestClose triggered');
         onClose();
-        onSeeMoreDetails();
       }}
     >
       <View style={styles.overlay}>
@@ -541,7 +537,6 @@ const ResultsPopup = ({
               onPress={() => {
                 console.log('Close button pressed in ResultsPopup');
                 onClose();
-                onSeeMoreDetails();
               }}
               style={styles.closeButton}
             >
@@ -737,23 +732,6 @@ const styles = StyleSheet.create({
     color: '#90EE90',
     fontWeight: 'bold',
   },
-  expressionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 5,
-  },
-  expressionLabel: {
-    color: '#fff',
-    fontSize: 14,
-    flex: 1,
-  },
-  expressionValue: {
-    color: '#90EE90',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginRight: 10,
-  },
   descriptionText: {
     color: '#fff',
     fontSize: 14,
@@ -815,7 +793,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // New styles for improved face analysis section with top 3 expressions
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -23,7 +23,6 @@ const { width, height } = Dimensions.get('window');
 const GoogleSignIn = ({ onSignInSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
 
-  // Enhanced logging function
   const log = (message, data = null) => {
     if (data) {
       console.log(`[GOOGLE_SIGNIN] ${message}:`, JSON.stringify(data, null, 2));
@@ -35,12 +34,12 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
   useEffect(() => {
     log('Configuring Google Sign-In...');
     GoogleSignin.configure({
-      webClientId: Config.GOOGLE_WEB_CLIENT_ID,
+      webClientId: Config.GOOGLE_WEB_CLIENT_ID, // .env dosyasından alınır
       offlineAccess: true,
       scopes: ['profile', 'email'],
       forceCodeForRefreshToken: true,
     });
-  
+
     checkCurrentUser();
   }, []);
 
@@ -51,7 +50,6 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
       const userInfo = await GoogleSignin.signInSilently();
       log('User already signed in', userInfo);
 
-      // Check for idToken
       let idToken = userInfo.idToken;
       if (!idToken) {
         log('idToken missing, attempting to get tokens...');
@@ -64,13 +62,13 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
         throw new Error('idToken is still missing after getTokens');
       }
 
-      // Sign in to Firebase with the Google idToken
       log('Creating Google credential with idToken', { idToken });
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
       const firebaseUserCredential = await auth().signInWithCredential(googleCredential);
       log('Firebase sign-in successful', firebaseUserCredential.user.toJSON());
 
-      onSignInSuccess(userInfo);
+      const firebaseUserId = firebaseUserCredential.user.uid; // Firebase UID
+      onSignInSuccess({ ...userInfo, userId: firebaseUserId }); // Firebase UID ile gönder
     } catch (error) {
       log('Check current user error', { error: error.message, code: error.code });
       if (error.code === statusCodes.SIGN_IN_REQUIRED) {
@@ -89,7 +87,6 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
       const userInfo = await GoogleSignin.signIn();
       log('Google Sign-In successful', userInfo);
 
-      // Check for idToken
       let idToken = userInfo.idToken;
       if (!idToken) {
         log('idToken missing, attempting to get tokens...');
@@ -102,13 +99,13 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
         throw new Error('idToken is still missing after getTokens');
       }
 
-      // Sign in to Firebase with the Google idToken
       log('Creating Google credential with idToken', { idToken });
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
       const firebaseUserCredential = await auth().signInWithCredential(googleCredential);
       log('Firebase sign-in successful', firebaseUserCredential.user.toJSON());
 
-      onSignInSuccess(userInfo);
+      const firebaseUserId = firebaseUserCredential.user.uid; // Firebase UID
+      onSignInSuccess({ ...userInfo, userId: firebaseUserId }); // Firebase UID ile gönder
     } catch (error) {
       log('Sign-in error', { error: error.message, code: error.code });
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
@@ -125,6 +122,7 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
     }
   };
 
+  // Stil tanımları aynı kalabilir, değişiklik yok
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -233,7 +231,7 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
             Our AI-powered app analyzes your facial features and your pet's characteristics to reveal surprising connections and compatibility insights.
           </Text>
         </View>
-        
+
         <TouchableOpacity
           style={styles.googleButton}
           onPress={signIn}
@@ -241,8 +239,8 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
           activeOpacity={0.8}
         >
           <View style={styles.googleIconContainer}>
-            <Image 
-              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }} 
+            <Image
+              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }}
               style={{ width: width * 0.06, height: width * 0.06 }}
               resizeMode="contain"
             />
@@ -254,7 +252,7 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
             </View>
           )}
         </TouchableOpacity>
-        
+
         <Text style={styles.termsText}>
           By continuing, you agree to our Terms of Service and Privacy Policy.
           Your data is secure and will only be used to provide the Face Pet Match experience.

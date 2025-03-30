@@ -33,9 +33,11 @@ import BannerAdComponent from './BannerAdComponent.js';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import GoogleSignIn from './GoogleSignIn';
 import IntroScreens from './IntroScreens';
-
-// Firebase yapılandırması
+import PreviousResults from './PreviousResults';
 import { initializeApp } from '@react-native-firebase/app';
+import firestore from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import storage from '@react-native-firebase/storage';
 
 const dogTraits = require('./dogTraits.json');
 
@@ -64,7 +66,6 @@ try {
   }
 }
 
-// Screen width for responsive design
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 // Define COLORS and SHADOWS for dark mode only
@@ -160,6 +161,8 @@ const CombinedAnalysisApp = () => {
     livingWith: undefined,
   });
   const [isPaid, setIsPaid] = useState(false);
+  const [previousResults, setPreviousResults] = useState([]);
+  const [userId, setUserId] = useState(null);
 
   const interstitialAdRef = useRef(InterstitialAd.createForAdRequest(
     Platform.OS === 'ios' ? 'ca-app-pub-3940256099942544/4411468910' : 'ca-app-pub-3940256099942544/1033173712' // Test ID'leri
@@ -170,10 +173,161 @@ const CombinedAnalysisApp = () => {
 
   // Get styles with fixed dark theme
   const styles = getStyles(COLORS, SHADOWS);
+  const uploadImageToStorage = async (imageData, userId, fileName) => {
+    try {
+      // Storage'da dosya yolu: users/{userId}/{fileName}
+      const reference = storage().ref(`users/${userId}/${fileName}`);
+      
+      // Base64 string'ini yüklüyoruz (data URI formatında: data:image/jpeg;base64,...)
+      await reference.putString(imageData, 'data_url');
+      
+      // Yüklenen resmin URL'sini alıyoruz
+      const url = await reference.getDownloadURL();
+      console.log(`[STORAGE] Image uploaded successfully: ${url}`);
+      return url;
+    } catch (error) {
+      console.error('[STORAGE] Error uploading image:', error);
+      throw error;
+    }
+  };
 
-  const handleSignInSuccess = (userInfo) => {
+  // AsyncStorage'dan userId'yi yükleme fonksiyonu
+  const loadUserIdFromStorage = async () => {
+    try {
+      const storedUserId = await AsyncStorage.getItem('userId');
+      if (storedUserId) {
+        setUserId(storedUserId);
+        setIsSignedIn(true);
+        return storedUserId;
+      }
+      return null;
+    } catch (error) {
+      console.error('[ASYNC_STORAGE] Error loading userId from AsyncStorage:', error);
+      return null;
+    }
+  };
+
+  // AsyncStorage'a userId'yi kaydetme fonksiyonu
+  const saveUserIdToStorage = async (userId) => {
+    try {
+      await AsyncStorage.setItem('userId', userId);
+      console.log('[ASYNC_STORAGE] userId saved to AsyncStorage:', userId);
+    } catch (error) {
+      console.error('[ASYNC_STORAGE] Error saving userId to AsyncStorage:', error);
+    }
+  };
+
+  // Firebase Functions
+  const saveResult = async (userId, petImage, faceImage, { compatibility, faceResult, petResult }) => {
+    try {
+      const petImageUrl = await uploadImageToStorage(petImage, userId, `pet_${Date.now()}.jpg`);
+      const faceImageUrl = await uploadImageToStorage(faceImage, userId, `face_${Date.now()}.jpg`);
+  
+      const result = {
+        timestamp: firestore.FieldValue.serverTimestamp(),
+        compatibilityScore: compatibility?.score || 0,
+        petBreed: petResult?.predicted_label || 'Unknown',
+        petImageUrl,
+        faceImageUrl,
+        details: compatibility?.details || [],
+        faceResult: faceResult || null, // Direkt analizden gelen veriyi kullan
+        petResult: petResult || null,
+        userQuestions: userQuestions || null,
+      };
+  
+      console.log('[saveResult] Saving to Firestore:', JSON.stringify(result, null, 2)); // Hata ayıklama
+  
+      await firestore()
+        .collection('users')
+        .doc(userId)
+        .collection('results')
+        .add(result);
+  
+      console.log('Result saved to Firestore for user:', userId);
+      return result;
+    } catch (error) {
+      console.error('Error saving result to Firestore:', error);
+      throw error;
+    }
+  };
+
+  const loadPreviousResults = async (userId) => {
+    try {
+      const snapshot = await firestore()
+        .collection('users')
+        .doc(userId)
+        .collection('results')
+        .orderBy('timestamp', 'desc')
+        .get();
+  
+      const results = snapshot.docs.map(doc => ({
+        id: doc.id,
+        timestamp: doc.data().timestamp ? doc.data().timestamp.toDate().getTime() : Date.now(),
+        compatibilityScore: doc.data().compatibilityScore || 0,
+        petBreed: doc.data().petBreed || 'Unknown',
+        petImageUrl: doc.data().petImageUrl || null,
+        faceImageUrl: doc.data().faceImageUrl || null,
+        details: doc.data().details || [],
+        faceResult: doc.data().faceResult || null,
+        petResult: doc.data().petResult || null,
+        userQuestions: doc.data().userQuestions || null,
+      }));
+  
+      return results;
+    } catch (error) {
+      console.error('Error loading previous results from Firestore:', error);
+      throw error;
+    }
+  };
+
+  // Uygulama açıldığında userId ve previousResults'ı yükle
+  useEffect(() => {
+    const initializeAppState = async () => {
+      const storedUserId = await loadUserIdFromStorage();
+      if (storedUserId) {
+        try {
+          const results = await loadPreviousResults(storedUserId);
+          setPreviousResults(results);
+          console.log('Previous results loaded on app start:', results);
+        } catch (error) {
+          console.error('[FIRESTORE] Error loading previous results on app start:', error);
+        }
+      }
+    };
+
+    initializeAppState();
+  }, []); // Boş bağımlılık dizisi, sadece uygulama açıldığında çalışır
+
+  const handleSignInSuccess = async (userInfo) => {
+    const newUserId = userInfo.userId; // Bu artık Firebase UID'si
+    console.log('[SIGN-IN] Firebase UID:', newUserId);
+    setUserId(newUserId);
     setIsSignedIn(true);
-    setCurrentStep(2); // Move to Pet Upload after sign-in
+    setCurrentStep(2); // Pet Upload adımına geç
+  
+    // userId'yi AsyncStorage'a kaydet
+    await saveUserIdToStorage(newUserId);
+  
+    if (newUserId) {
+      try {
+        const results = await loadPreviousResults(newUserId);
+        setPreviousResults(results);
+        console.log('[FIRESTORE] Previous results loaded:', results);
+      } catch (error) {
+        console.error('[FIRESTORE] Error in handleSignInSuccess:', error);
+      }
+    }
+  };
+
+  // Popup Handlers
+  const handleClosePopup = () => {
+    setShowResultsPopup(false);
+    setCurrentStep(2); // Upload Pet Image sayfasına dön
+  };
+
+  const handleSeeMoreDetails = () => {
+    setShowResultsPopup(false);
+    setCurrentStep(6); // Sonuçlar sayfasına git
   };
 
   useEffect(() => {
@@ -183,7 +337,6 @@ const CombinedAnalysisApp = () => {
   
     const handleAppStateChange = (nextAppState) => {
       console.log('[APP] AppState changed to:', nextAppState);
-      // Popup'ı otomatik açma kodunu kaldırdık
     };
   
     const subscription = AppState.addEventListener('change', handleAppStateChange);
@@ -195,9 +348,9 @@ const CombinedAnalysisApp = () => {
     };
   }, [currentStep]);
 
-  // Interstitial Ad Event Listeners (Reklam yüklemeyi geciktirme)
+  // Interstitial Ad Event Listeners
   useEffect(() => {
-    if (currentStep !== 0) { // Yalnızca IntroScreens tamamlandıktan sonra reklam yükle
+    if (currentStep !== 0) {
       const interstitialAd = interstitialAdRef.current;
   
       const unsubscribeLoaded = interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
@@ -210,14 +363,14 @@ const CombinedAnalysisApp = () => {
         console.log('[AD] Ad failed to load at:', Date.now(), 'Error:', error);
         setIsAdLoaded(false);
         setIsAdLoading(false);
-        setCurrentStep(6); // Hata durumunda sadece Results ekranına geç
+        setCurrentStep(6);
       });
   
       const unsubscribeClosed = interstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
         console.log('[AD] Interstitial ad closed at:', Date.now());
         setIsAdLoaded(false);
         setIsAdLoading(true);
-        setCurrentStep(6); // Reklam kapandığında sadece Results ekranına geç
+        setCurrentStep(6);
         setTimeout(() => {
           console.log('[AD] Loading new interstitial ad after close at:', Date.now());
           interstitialAd.load();
@@ -243,6 +396,7 @@ const CombinedAnalysisApp = () => {
     }
   }, [currentStep, isAdLoading, isAdLoaded]);
 
+  
   const formatBreedName = (breed) => {
     if (!breed) return translations[language].unknown || 'Unknown';
     const breedPart = breed.split('-')[1] || breed;
@@ -680,25 +834,92 @@ const CombinedAnalysisApp = () => {
 
   const analyzeImages = async () => {
     setIsAnalyzing(true);
-    setCurrentStep(5); // Move to Analysis step
+    setCurrentStep(5); // Analysis step
     setAnalysisProgress(0);
     setError(null);
   
-    const [faceDetections, petResult] = await Promise.all([analyzeFace(), analyzePet()]);
+    // İlk aşama: Landmark'lar gelene kadar çok yavaş dolum
+    let progress = 0;
+    let apiCompleted = false;
+    const animateInitialProgress = () => {
+      return new Promise((resolve) => {
+        const interval = setInterval(() => {
+          if (!apiCompleted) {
+            progress += 0.5; // Çok yavaş dolum: Her 200ms'de %0.5 artar
+            setAnalysisProgress(Math.min(progress, 99)); // %100'e kadar gitmesin, API sonrası tamamlanır
+          }
+          if (apiCompleted) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 200); // 200ms ile gerçekten yavaş dolum
+      });
+    };
   
-    if (!faceDetections || !petResult) {
+    // API çağrılarını ve animasyonu paralel başlat
+    const animationPromise = animateInitialProgress();
+    const [faceDetections, petAnalysis] = await Promise.all([analyzeFace(), analyzePet()]);
+    apiCompleted = true;
+  
+    // API tamamlandığında animasyonu bekle ve son durumu al
+    await animationPromise;
+    const preApiProgress = progress; // API tamamlandığındaki ilerleme değerini sakla
+  
+    if (!faceDetections || !petAnalysis) {
       setIsAnalyzing(false);
       setCurrentStep(4); // Back to Questions step if failed
       setError(translations[language].errorAnalysisFailed || 'Analysis failed. Please try again.');
       return;
     }
   
-    const compatibilityResult = calculateCompatibilityScore(petResult, faceDetections, userQuestions);
+    const compatibilityResult = calculateCompatibilityScore(petAnalysis, faceDetections, userQuestions);
+  
+    // State'leri güncelle
+    setFaceResult(faceDetections);
+    setPetResult(petAnalysis);
     setCompatibility(compatibilityResult);
   
-    // Animasyonu kaldırıp direkt sonuç adımına geçiyoruz
-    setAnalysisProgress(100); // İlerlemeyi hemen %100 yap
-    setIsAnalyzing(false);
+    // Firebase işlemleri
+    if (userId) {
+      try {
+        const savedResult = await saveResult(userId, petImage, faceImage, {
+          compatibility: compatibilityResult,
+          faceResult: faceDetections,
+          petResult: petAnalysis,
+        });
+        const updatedResults = await loadPreviousResults(userId);
+        setPreviousResults(updatedResults);
+        console.log('[FIRESTORE] Results saved and fetched successfully:', savedResult);
+      } catch (firestoreError) {
+        console.error('[FIRESTORE] Error during Firestore operations:', firestoreError);
+        setError(translations[language].firestoreError || 'Failed to save results to Firestore.');
+      }
+    }
+  
+    // İkinci aşama: API sonrası o anki değerden %100'e 5 saniyede smooth dolum
+    const animateFinalProgress = () => {
+      return new Promise((resolve) => {
+        let finalProgress = preApiProgress; // API sonrası mevcut ilerleme
+        const remainingPercentage = 100 - finalProgress; // Kalan yüzde
+        const step = remainingPercentage / (5000 / 50); // 5 saniyede kalan farkı kapatacak adım
+        const interval = setInterval(() => {
+          finalProgress += step;
+          setAnalysisProgress(Math.min(Math.round(finalProgress), 100));
+          if (finalProgress >= 100) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 50); // 50ms ile smooth dolum (5 saniyede 100 adım)
+      });
+    };
+  
+    await animateFinalProgress(); // Animasyonun tamamlanmasını bekle
+    setIsAnalyzing(false); // Analiz ekranını kapat
+  
+    // İlk analizden sonra ResultsPopup'ı göster
+    setShowResultsPopup(true);
+  
+    // Reklam gösterimi
     if (isAdLoaded && !isAdLoading) {
       try {
         interstitialAdRef.current.show();
@@ -710,7 +931,6 @@ const CombinedAnalysisApp = () => {
       setCurrentStep(6); // Reklam yoksa direkt Results step'e geç
     }
   };
-
   const resetAnalysis = () => {
     setCurrentStep(2); // Reset to Pet Upload step
     setFaceImage(null);
@@ -875,6 +1095,13 @@ const CombinedAnalysisApp = () => {
           <Text style={styles.buttonText}>{translations[language].continueToFaceUpload}</Text>
         </TouchableOpacity>
       )}
+      <PreviousResults
+        results={previousResults}
+        translations={translations}
+        language={language}
+        currentPetImage={petImage} // Ekledik
+        currentFaceImage={faceImage} // Ekledik
+      />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -914,6 +1141,13 @@ const CombinedAnalysisApp = () => {
           <Text style={styles.buttonText}>{translations[language].goBackButton}</Text>
         </TouchableOpacity>
       </View>
+      <PreviousResults
+        results={previousResults}
+        translations={translations}
+        language={language}
+        currentPetImage={petImage} // Ekledik
+        currentFaceImage={faceImage} // Ekledik
+      />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -929,8 +1163,7 @@ const CombinedAnalysisApp = () => {
       onContinue={analyzeImages}
       onBack={() => setCurrentStep(3)} // Back to Face Upload
       faceResult={optimizedFaceResult}
-      showStartAnalysisButton={true} // Bu prop'un true olduğundan emin olalım
-
+      showStartAnalysisButton={true}
     />
   );
 
@@ -1275,7 +1508,7 @@ const CombinedAnalysisApp = () => {
         <View style={styles.actionsButtonContainer}>
           <TouchableOpacity
             style={styles.getProButton}
-            onPress={() => setShowResultsPopup(true)} // "Get Pro" butonuna basıldığında ResultsPopup açılır
+            onPress={() => setShowResultsPopup(true)}
           >
             <Text style={styles.buttonText}>💪 Get Pro+</Text>
           </TouchableOpacity>
@@ -1303,16 +1536,15 @@ const CombinedAnalysisApp = () => {
   const popupProps = useMemo(() => {
     return {
       visible: showResultsPopup,
-      onClose: () => setShowResultsPopup(false),
+      onClose: handleClosePopup,
+      onSeeMoreDetails: handleSeeMoreDetails,
       compatibilityScore: compatibility?.score,
       details: compatibility?.details,
-      petImage,
-      faceImage,
+      petImage, // İlk analiz için base64
+      faceImage, // İlk analiz için base64
+      petImageUrl: null, // İlk analizde kullanılmaz
+      faceImageUrl: null, // İlk analizde kullanılmaz
       petBreed: petResult?.predicted_label,
-      onSeeMoreDetails: () => {
-        setShowResultsPopup(false);
-        setCurrentStep(6); // Move to Results step
-      },
       translations,
       language,
       userQuestions,
@@ -1331,7 +1563,6 @@ const CombinedAnalysisApp = () => {
     optimizedFaceResult,
     petResult,
   ]);
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
@@ -1352,7 +1583,6 @@ const CombinedAnalysisApp = () => {
         </View>
       </ScrollView>
       {currentStep !== 0 && <BannerAdComponent adUnitId={bannerAdUnitId} />}
-
       <ResultsPopup {...popupProps} />
     </SafeAreaView>
   );
