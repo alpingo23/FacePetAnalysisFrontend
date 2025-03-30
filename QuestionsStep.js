@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,16 @@ import {
   SafeAreaView,
   ScrollView,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+// Get screen dimensions and update them when orientation changes
+const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('screen');
+
+// Banner için alan bırakacak şekilde kullanılabilir yükseklik hesabı
+const BANNER_HEIGHT_RATIO = 0.1; // Banner yüksekliğinin ekran yüksekliğine oranı
+const usableHeight = windowHeight * (1 - BANNER_HEIGHT_RATIO);
 
 // Yardımcı bileşen: Yıldız şekli
 const StarIcon = ({ size, color }) => (
@@ -50,38 +57,59 @@ const QuestionsStep = ({
   showStartAnalysisButton = false,
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [screenDimensions, setScreenDimensions] = useState({
+    width: windowWidth,
+    height: usableHeight // Kullanılabilir yükseklik (banner dışında kalan)
+  });
+
+  // Listen for dimension changes (e.g., orientation changes)
+  useEffect(() => {
+    const updateDimensions = () => {
+      const { width, height } = Dimensions.get('window');
+      const updatedUsableHeight = height * (1 - BANNER_HEIGHT_RATIO);
+      setScreenDimensions({ width, height: updatedUsableHeight });
+    };
+
+    const dimensionsListener = Dimensions.addEventListener('change', updateDimensions);
+
+    return () => {
+      dimensionsListener.remove();
+    };
+  }, []);
 
   const getStyles = () =>
     StyleSheet.create({
       container: {
         flex: 1,
         backgroundColor: '#000',
+        width: screenDimensions.width, // Use full screen width
       },
       header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingTop: 10,
-        paddingBottom: 10,
-        height: 50,
+        paddingHorizontal: '4%',
+        paddingTop: '2%',
+        paddingBottom: '2%',
+        height: screenDimensions.height * 0.08, // Ekran yüksekliğine göre oransal
         backgroundColor: '#1A1A1A',
+        width: '100%', // Ensure header uses full width
       },
       backButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: screenDimensions.width * 0.09, // Ekran genişliğine göre oransal
+        height: screenDimensions.width * 0.09, // Kare tuş için aynı değer
+        borderRadius: screenDimensions.width * 0.045, // Yarıçap (yuvarlak için)
         backgroundColor: '#333',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15,
+        marginRight: '4%',
       },
       backIcon: {
-        fontSize: 30,
+        fontSize: screenDimensions.width * 0.07, // Ekran genişliğine göre oransal font
         fontWeight: 'bold',
         color: '#FFF',
         textAlign: 'center',
-        lineHeight: 36,
-        marginTop: -10,
+        lineHeight: screenDimensions.width * 0.09, // Buton yüksekliğiyle aynı
+        marginTop: screenDimensions.width * -0.025, // Oransal negatif margin
       },
       progressBar: {
         flex: 1,
@@ -96,46 +124,50 @@ const QuestionsStep = ({
       },
       scrollView: {
         flex: 1,
+        width: '100%', // Ensure scrollView uses full width
       },
       contentContainer: {
         paddingHorizontal: 20,
         paddingTop: 20,
-        paddingBottom: 80,
-        minHeight: height - 150,
+        paddingBottom: Math.max(20, screenDimensions.height * 0.05), // Oransal padding
+        minHeight: screenDimensions.height - (screenDimensions.height * 0.15), // Oransal yükseklik
+        width: '100%', // Ensure content uses full width
       },
       title: {
-        fontSize: 28,
+        fontSize: screenDimensions.width * 0.07, // Ekran genişliğine göre oransal
         fontWeight: 'bold',
         color: '#FFF',
-        marginBottom: 8,
+        marginBottom: screenDimensions.height * 0.015,
       },
       subtitle: {
-        fontSize: 14,
+        fontSize: screenDimensions.width * 0.035, // Ekran genişliğine göre oransal
         color: '#AAA',
-        marginBottom: 25,
+        marginBottom: screenDimensions.height * 0.035,
       },
       optionContainer: {
         marginBottom: 15,
+        width: '100%', // Make option container full width
       },
       option: {
         backgroundColor: '#1A1A1A',
-        borderRadius: 15,
-        padding: 15,
-        marginBottom: 15,
+        borderRadius: screenDimensions.width * 0.04, // Ekran genişliğine göre oransal
+        padding: screenDimensions.width * 0.04, // Ekran genişliğine göre oransal
+        marginBottom: screenDimensions.height * 0.025, // Ekran yüksekliğine göre oransal
         flexDirection: 'row',
         alignItems: 'center',
+        width: '100%', // Make each option full width
       },
       optionSelected: {
         backgroundColor: COLORS.primary,
       },
       optionIcon: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        width: screenDimensions.width * 0.12, // Ekran genişliğine göre oransal
+        height: screenDimensions.width * 0.12, // Kare olması için aynı değer
+        borderRadius: screenDimensions.width * 0.06, // Yarıçap (yuvarlak için)
         backgroundColor: '#333',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15,
+        marginRight: screenDimensions.width * 0.04,
       },
       singleDot: {
         width: 16,
@@ -248,30 +280,36 @@ const QuestionsStep = ({
         flex: 1,
       },
       optionTitle: {
-        fontSize: 18,
+        fontSize: screenDimensions.width * 0.045, // Ekran genişliğine göre oransal
         fontWeight: 'bold',
         color: '#FFF',
-        marginBottom: 4,
+        marginBottom: screenDimensions.height * 0.008,
       },
       optionDescription: {
-        fontSize: 14,
+        fontSize: screenDimensions.width * 0.035, // Ekran genişliğine göre oransal
         color: '#CCC',
       },
       selectedText: {
         color: '#FFFFFF',
       },
       nextButtonContainer: {
-        paddingHorizontal: 20,
-        paddingVertical: 15,
-        borderTopWidth: 1,
+        paddingHorizontal: '5%',
+        paddingVertical: screenDimensions.height * 0.07,
+        borderTopWidth: 0,
         borderTopColor: '#333',
+        width: '100%', // Make button container full width
+        // Ekranın alt kısmında sabitler (banner'ın üstünde)
+        position: 'absolute',
+        bottom: 10,
+        backgroundColor: '#000', // Arka plan rengi
       },
       nextButton: {
         backgroundColor: COLORS.primary, // Varsayılan renk
-        height: 50,
-        borderRadius: 25,
+        height: screenDimensions.height * 0.07, // Ekran yüksekliğine göre oransal
+        borderRadius: screenDimensions.height * 0.035, // Yuvarlatılmış kenarlar
         justifyContent: 'center',
         alignItems: 'center',
+        width: '100%', // Make button full width
         ...SHADOWS.medium,
       },
       nextButtonDisabled: {
@@ -282,7 +320,7 @@ const QuestionsStep = ({
       },
       nextButtonText: {
         color: '#FFFFFF',
-        fontSize: 16,
+        fontSize: screenDimensions.width * 0.04, // Ekran genişliğine göre oransal
         fontWeight: 'bold',
       },
     });
@@ -640,6 +678,8 @@ const QuestionsStep = ({
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Burayı bırak - Banner'ın görüntülenmesi için StatusBar gizlenmeyecek */}
+      
       {/* Header with back button and progress bar */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
@@ -653,7 +693,15 @@ const QuestionsStep = ({
       </View>
 
       {/* Question content */}
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={[
+          styles.contentContainer,
+          // Banner ve buton yüksekliğini hesaba katarak padding ekleyin
+          { paddingBottom: screenDimensions.height * 0.12 }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>{currentQuestion.title}</Text>
         <Text style={styles.subtitle}>{currentQuestion.subtitle}</Text>
 
@@ -681,26 +729,26 @@ const QuestionsStep = ({
             );
           })}
         </View>
-
-        {/* Next button as part of the scrollable content */}
-        <View style={styles.nextButtonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !isCurrentQuestionAnswered && styles.nextButtonDisabled,
-              currentQuestionIndex === questions.length - 1 && isCurrentQuestionAnswered && styles.nextButtonGreen, // Son soruda ve bir şık seçildiğinde yeşil
-            ]}
-            disabled={!isCurrentQuestionAnswered}
-            onPress={handleNext}
-          >
-            <Text style={styles.nextButtonText}>
-              {currentQuestionIndex === questions.length - 1 && showStartAnalysisButton
-                ? translations[language].startAnalysisButton
-                : translations[language].continueButton || 'Next'}
-            </Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
+
+      {/* Next button container, positioned above the ad banner */}
+      <View style={styles.nextButtonContainer}>
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            !isCurrentQuestionAnswered && styles.nextButtonDisabled,
+            currentQuestionIndex === questions.length - 1 && isCurrentQuestionAnswered && styles.nextButtonGreen, // Son soruda ve bir şık seçildiğinde yeşil
+          ]}
+          disabled={!isCurrentQuestionAnswered}
+          onPress={handleNext}
+        >
+          <Text style={styles.nextButtonText}>
+            {currentQuestionIndex === questions.length - 1 && showStartAnalysisButton
+              ? translations[language].startAnalysisButton
+              : translations[language].continueButton || 'Next'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
