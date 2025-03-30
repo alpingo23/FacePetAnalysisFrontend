@@ -182,6 +182,13 @@ const ResultsPopup = ({
           {translations[language].overallScore || 'Overall'}
         </Text>
 
+        {/* MODIFIED: First show the score and progress bar */}
+        <Text style={[styles.scoreText, { color: getScoreColor(compatibilityScore) }]}>
+          {compatibilityScore || 0}
+        </Text>
+        {renderProgressBar(compatibilityScore || 0, getScoreColor(compatibilityScore))}
+
+        {/* MODIFIED: Then show the images */}
         <View style={styles.imagesContainer}>
           <View style={styles.imageWithLabel}>
             {petImage ? (
@@ -206,11 +213,6 @@ const ResultsPopup = ({
             <Text style={styles.imageLabel}>{translations[language].human || 'Human'}</Text>
           </View>
         </View>
-
-        <Text style={[styles.scoreText, { color: getScoreColor(compatibilityScore) }]}>
-          {compatibilityScore || 0}
-        </Text>
-        {renderProgressBar(compatibilityScore || 0, getScoreColor(compatibilityScore))}
 
         <View style={styles.categoriesGrid}>
           <View style={styles.categoryRow}>
@@ -271,7 +273,7 @@ const ResultsPopup = ({
     console.log('[ResultsPopup] Rendering Face Analysis Slide...');
     console.log('[renderFaceAnalysisSlide] faceAnalysis:', faceAnalysis);
 
-    // faceAnalysis veya expressions yoksa hata mesajı döndür
+    // Check if face analysis data exists
     if (!faceAnalysis || !faceAnalysis.expressions) {
       return (
         <ScrollView contentContainerStyle={styles.slide}>
@@ -285,21 +287,31 @@ const ResultsPopup = ({
       );
     }
 
-    // İfade isimlerini tanımlayalım
-    const expressionNames = ['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'neutral'];
-
-    // expressions nesnesini bir diziye dönüştürelim
+    // Process expressions data
     let expressionEntries = [];
     if (Array.isArray(faceAnalysis.expressions)) {
-      // Eğer expressions bir dizi ise, her bir değeri expressionNames ile eşleştir
-      expressionEntries = faceAnalysis.expressions.map((value, index) => [
-        expressionNames[index] || `expression${index}`,
-        value,
+      // Eğer expressions bir dizi ise (optimizedFaceResult formatı: [{ expression, value }])
+      expressionEntries = faceAnalysis.expressions.map(item => [
+        item.expression,
+        parseFloat(item.value), // Zaten % formatında geliyor, direkt parseFloat ile alıyoruz
       ]);
     } else if (typeof faceAnalysis.expressions === 'object') {
-      // Eğer expressions bir nesne ise, Object.entries kullan
-      expressionEntries = Object.entries(faceAnalysis.expressions);
+      // Eğer expressions bir nesne ise ({ happy: 0, sad: 0, ... })
+      expressionEntries = Object.entries(faceAnalysis.expressions).map(([key, value]) => [
+        key,
+        parseFloat(value) * 100, // 0-1 aralığından %'ye çevir
+      ]);
     }
+
+    // Sort and get only top 3 expressions
+    expressionEntries = expressionEntries
+      .map(([expression, value]) => [
+        expression,
+        isNaN(value) ? 0 : value, // NaN ise 0 kullan
+      ])
+      .sort((a, b) => b[1] - a[1]);
+
+    const topExpressions = expressionEntries.slice(0, 3);
 
     return (
       <ScrollView contentContainerStyle={styles.slide}>
@@ -319,37 +331,56 @@ const ResultsPopup = ({
         </View>
 
         <View style={styles.analysisDetails}>
-          <Text style={styles.analysisLabel}>
-            {translations[language].ageLabel || 'Age'}: <Text style={styles.analysisValue}>{faceAnalysis.age || 'N/A'}</Text>
-          </Text>
-          <Text style={styles.analysisLabel}>
-            {translations[language].genderLabel || 'Gender'}: <Text style={styles.analysisValue}>{faceAnalysis.gender || 'N/A'}</Text>
-          </Text>
-          <Text style={styles.analysisLabel}>
-            {translations[language].expressionLabel || 'Expressions'}:
-          </Text>
-          {expressionEntries.length > 0 ? (
-            expressionEntries.map(([expression, value], index) => {
-              // Çeviri yoksa expression'ı olduğu gibi kullan
-              const expressionLabel = translations[language].expressions?.[expression]
-                ? translations[language].expressions[expression].charAt(0).toUpperCase() +
-                  translations[language].expressions[expression].slice(1)
-                : expression.charAt(0).toUpperCase() + expression.slice(1);
-              const expressionValue = parseFloat(value) * 100; // Değeri yüzdelik olarak dönüştür
-              const displayValue = isNaN(expressionValue) ? 0 : expressionValue; // NaN ise 0 kullan
+          {/* Age and Gender info */}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>
+              {translations[language].ageLabel || 'Age'}:
+            </Text>
+            <Text style={styles.infoValue}>{faceAnalysis.age || 'N/A'}</Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>
+              {translations[language].genderLabel || 'Gender'}:
+            </Text>
+            <Text style={styles.infoValue}>{faceAnalysis.gender || 'N/A'}</Text>
+          </View>
 
+          {/* Expressions Section */}
+          <Text style={styles.expressionSectionTitle}>
+            {translations[language].expressionLabel || 'Top Expressions'}
+          </Text>
+          
+          {topExpressions.length > 0 ? (
+            topExpressions.map(([expression, value], index) => {
+              // Get translated or formatted expression name
+              const expressionLabel = 
+                translations[language]?.expressions?.[expression]
+                  ? translations[language].expressions[expression].charAt(0).toUpperCase() +
+                    translations[language].expressions[expression].slice(1)
+                  : expression.charAt(0).toUpperCase() + expression.slice(1);
+              
               return (
-                <View key={index} style={styles.expressionRow}>
-                  <Text style={styles.expressionLabel}>
-                    {expressionLabel}:
-                  </Text>
-                  <Text style={styles.expressionValue}>{displayValue.toFixed(2)}%</Text>
-                  {renderProgressBar(displayValue, getScoreColor(displayValue))}
+                <View key={index} style={styles.expressionContainer}>
+                  <View style={styles.expressionLabelContainer}>
+                    <Text style={styles.expressionLabel}>{expressionLabel}</Text>
+                  </View>
+                  <View style={styles.expressionBarContainer}>
+                    <View style={styles.progressBarContainer}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          { width: `${value}%`, backgroundColor: getScoreColor(value) }
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.expressionValue}>{value.toFixed(2)}%</Text>
+                  </View>
                 </View>
               );
             })
           ) : (
-            <Text style={styles.analysisValue}>
+            <Text style={styles.noDataText}>
               {translations[language].noExpressionData || 'No expression data available'}
             </Text>
           )}
@@ -429,6 +460,11 @@ const ResultsPopup = ({
       <ScrollView contentContainerStyle={styles.slide}>
         <Text style={[styles.categoryTitle, { color: getScoreColor(score) }]}>{title}</Text>
 
+        {/* MODIFIED: First show the score and progress bar */}
+        <Text style={[styles.scoreText, { color: getScoreColor(score) }]}>{score}</Text>
+        {renderProgressBar(score, getScoreColor(score))}
+
+        {/* MODIFIED: Then show the images */}
         <View style={styles.imagesContainer}>
           <View style={styles.imageWithLabel}>
             {petImage ? (
@@ -453,9 +489,6 @@ const ResultsPopup = ({
             <Text style={styles.imageLabel}>{translations[language].human || 'Human'}</Text>
           </View>
         </View>
-
-        <Text style={[styles.scoreText, { color: getScoreColor(score) }]}>{score}</Text>
-        {renderProgressBar(score, getScoreColor(score))}
 
         <Text style={styles.descriptionText}>{description}</Text>
 
@@ -617,7 +650,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 5,
   },
   categoryTitleSmall: {
     color: '#fff',
@@ -638,7 +671,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     gap: 30,
-    marginBottom: 20,
+    marginBottom: 0,
   },
   imageWithLabel: {
     alignItems: 'center',
@@ -650,7 +683,8 @@ const styles = StyleSheet.create({
     borderRadius: SCREEN_WIDTH * 0.125,
     borderWidth: 2,
     borderColor: '#fff',
-    marginBottom: 5,
+    marginBottom: 15,
+    marginTop: 25,
   },
   imageLabel: {
     color: '#fff',
@@ -662,11 +696,11 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 56,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 0,
     textAlign: 'center',
   },
   progressBarContainer: {
-    width: '80%',
+    width: '70%',
     height: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 5,
@@ -780,6 +814,61 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  // New styles for improved face analysis section with top 3 expressions
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoLabel: {
+    color: '#fff',
+    fontSize: 16,
+    marginRight: 5,
+  },
+  infoValue: {
+    color: '#90EE90',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  expressionSectionTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 15,
+  },
+  expressionContainer: {
+    marginBottom: 15,
+    width: '100%',
+  },
+  expressionLabelContainer: {
+    marginBottom: 5,
+  },
+  expressionBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  expressionLabel: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  expressionValue: {
+    color: '#90EE90',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+    width: 80,
+    textAlign: 'right',
+  },
+  noDataText: {
+    color: '#fff',
+    fontSize: 16,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 

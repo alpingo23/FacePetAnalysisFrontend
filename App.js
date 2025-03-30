@@ -180,16 +180,14 @@ const CombinedAnalysisApp = () => {
     blinkInterval.current = setInterval(() => {
       setIsLVisible((prev) => !prev);
     }, 500);
-
+  
     const handleAppStateChange = (nextAppState) => {
       console.log('[APP] AppState changed to:', nextAppState);
-      if (nextAppState === 'active' && currentStep === 6 && !showResultsPopup) {
-        setShowResultsPopup(true);
-      }
+      // Popup'ı otomatik açma kodunu kaldırdık
     };
-
+  
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-
+  
     return () => {
       if (blinkInterval.current) clearInterval(blinkInterval.current);
       if (animationTimer.current) cancelAnimationFrame(animationTimer.current);
@@ -201,41 +199,41 @@ const CombinedAnalysisApp = () => {
   useEffect(() => {
     if (currentStep !== 0) { // Yalnızca IntroScreens tamamlandıktan sonra reklam yükle
       const interstitialAd = interstitialAdRef.current;
-
+  
       const unsubscribeLoaded = interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
         console.log('[AD] Interstitial ad loaded successfully at:', Date.now());
         setIsAdLoaded(true);
         setIsAdLoading(false);
       });
-
+  
       const unsubscribeError = interstitialAd.addAdEventListener(AdEventType.ERROR, (error) => {
         console.log('[AD] Ad failed to load at:', Date.now(), 'Error:', error);
         setIsAdLoaded(false);
         setIsAdLoading(false);
-        setShowResultsPopup(true);
+        setCurrentStep(6); // Hata durumunda sadece Results ekranına geç
       });
-
+  
       const unsubscribeClosed = interstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
         console.log('[AD] Interstitial ad closed at:', Date.now());
         setIsAdLoaded(false);
         setIsAdLoading(true);
-        setShowResultsPopup(true);
+        setCurrentStep(6); // Reklam kapandığında sadece Results ekranına geç
         setTimeout(() => {
           console.log('[AD] Loading new interstitial ad after close at:', Date.now());
           interstitialAd.load();
         }, 100);
       });
-
+  
       const unsubscribeOpened = interstitialAd.addAdEventListener(AdEventType.OPENED, () => {
         console.log('[AD] Interstitial ad opened at:', Date.now());
       });
-
+  
       if (!isAdLoading && !isAdLoaded) {
         console.log('[AD] Initial loading of interstitial ad at:', Date.now());
         setIsAdLoading(true);
         interstitialAd.load();
       }
-
+  
       return () => {
         unsubscribeLoaded();
         unsubscribeError();
@@ -243,7 +241,7 @@ const CombinedAnalysisApp = () => {
         unsubscribeOpened();
       };
     }
-  }, [currentStep, isAdLoading, isAdLoaded]); // currentStep eklendi
+  }, [currentStep, isAdLoading, isAdLoaded]);
 
   const formatBreedName = (breed) => {
     if (!breed) return translations[language].unknown || 'Unknown';
@@ -685,44 +683,32 @@ const CombinedAnalysisApp = () => {
     setCurrentStep(5); // Move to Analysis step
     setAnalysisProgress(0);
     setError(null);
-
+  
     const [faceDetections, petResult] = await Promise.all([analyzeFace(), analyzePet()]);
-
+  
     if (!faceDetections || !petResult) {
       setIsAnalyzing(false);
       setCurrentStep(4); // Back to Questions step if failed
       setError(translations[language].errorAnalysisFailed || 'Analysis failed. Please try again.');
       return;
     }
-
+  
     const compatibilityResult = calculateCompatibilityScore(petResult, faceDetections, userQuestions);
     setCompatibility(compatibilityResult);
-
-    let frameCount = 0;
-    const animate = () => {
-      const progress = Math.min(100, (frameCount / 600) * 100);
-      setAnalysisProgress(Math.floor(progress));
-      frameCount++;
-      if (progress < 100) {
-        animationTimer.current = requestAnimationFrame(animate);
-      } else {
-        setIsAnalyzing(false);
-        if (isAdLoaded && !isAdLoading) {
-          try {
-            interstitialAdRef.current.show();
-          } catch (adError) {
-            console.error('[AD] Error showing ad:', adError);
-            setShowResultsPopup(true);
-          }
-        } else {
-          setTimeout(() => {
-            setShowResultsPopup(true);
-          }, 5000);
-        }
-        setCurrentStep(6); // Move to Results step
+  
+    // Animasyonu kaldırıp direkt sonuç adımına geçiyoruz
+    setAnalysisProgress(100); // İlerlemeyi hemen %100 yap
+    setIsAnalyzing(false);
+    if (isAdLoaded && !isAdLoading) {
+      try {
+        interstitialAdRef.current.show();
+      } catch (adError) {
+        console.error('[AD] Error showing ad:', adError);
+        setCurrentStep(6); // Reklam başarısız olursa Results step'e geç
       }
-    };
-    animate();
+    } else {
+      setCurrentStep(6); // Reklam yoksa direkt Results step'e geç
+    }
   };
 
   const resetAnalysis = () => {
@@ -1144,8 +1130,8 @@ const CombinedAnalysisApp = () => {
   
     return (
       <ScrollView
-        style={[styles.scrollView, { backgroundColor: '#000' }]} // style prop'unda yalnızca ScrollView'in kendi stilleri
-        contentContainerStyle={styles.stepContainer} // Düzen özellikleri contentContainerStyle'a taşındı
+        style={[styles.scrollView, { backgroundColor: '#000' }]}
+        contentContainerStyle={styles.stepContainer}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.resultsHeader}>
@@ -1287,7 +1273,10 @@ const CombinedAnalysisApp = () => {
           </View>
         </View>
         <View style={styles.actionsButtonContainer}>
-          <TouchableOpacity style={styles.getProButton}>
+          <TouchableOpacity
+            style={styles.getProButton}
+            onPress={() => setShowResultsPopup(true)} // "Get Pro" butonuna basıldığında ResultsPopup açılır
+          >
             <Text style={styles.buttonText}>💪 Get Pro+</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.inviteFriendsButton}>
