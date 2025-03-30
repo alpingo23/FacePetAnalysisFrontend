@@ -8,8 +8,9 @@ import {
   Dimensions,
   Animated,
   FlatList,
-  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,7 +19,7 @@ const IntroScreens = ({ onComplete, language, translations }) => {
   const flatListRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Images for the intro screens can be imported or required
+  // Images for the intro screens
   const images = [
     require('./assets/face_analysis_intro.png'),
     require('./assets/pet_analysis_intro.png'),
@@ -50,7 +51,7 @@ const IntroScreens = ({ onComplete, language, translations }) => {
     }
   };
 
-  // Default translations in case the passed translations aren't available
+  // Default translations
   const defaultTranslations = {
     uk: {
       intro_page1_title: "Face Analysis",
@@ -61,7 +62,7 @@ const IntroScreens = ({ onComplete, language, translations }) => {
       intro_page3_desc: "We compare both analyses to determine your compatibility score and relationship potential.",
       next_button: "Next",
       start_button: "Get Started",
-    }
+    },
   };
 
   // Merge with passed translations or use defaults
@@ -91,19 +92,47 @@ const IntroScreens = ({ onComplete, language, translations }) => {
   const renderItem = ({ item, index }) => {
     return (
       <View style={styles.slide}>
-        <View style={styles.contentWrapper}>
-          <View style={styles.imageContainer}>
-            <Image source={item.image} style={styles.image} resizeMode="contain" />
-          </View>
+        {/* Image section - frame ve corner elementleri kaldırıldı */}
+        <View style={styles.imageContainer}>
+          <Image source={item.image} style={styles.image} resizeMode="contain" />
+        </View>
+        
+        {/* White content card with rounded corners */}
+        <View style={styles.contentCard}>
+          {/* Title and description */}
           <Text style={styles.title}>{item.title}</Text>
           <Text style={styles.description}>{item.description}</Text>
+          
+          {/* Pagination dots */}
+          <View style={styles.paginationContainer}>
+            {introContent.map((_, dotIndex) => (
+              <View
+                key={dotIndex}
+                style={[
+                  styles.paginationDot,
+                  currentPage === dotIndex && styles.paginationDotActive,
+                ]}
+              />
+            ))}
+          </View>
+          
+          {/* Next button */}
+          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+            <Text style={styles.nextButtonText}>
+              {currentPage === 2 
+                ? (currentTranslations.start_button || "Get Started") 
+                : (currentTranslations.next_button || "Next")}
+            </Text>
+          </TouchableOpacity>
         </View>
+
       </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
       <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}>
         <FlatList
           ref={flatListRef}
@@ -112,6 +141,7 @@ const IntroScreens = ({ onComplete, language, translations }) => {
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          bounces={false}
           snapToInterval={width}
           decelerationRate="fast"
           snapToAlignment="center"
@@ -127,29 +157,6 @@ const IntroScreens = ({ onComplete, language, translations }) => {
             index,
           })}
         />
-
-        <View style={styles.bottomControls}>
-          <View style={styles.pagination}>
-            {introContent.map((_, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.paginationDot,
-                  currentPage === index && styles.paginationDotActive,
-                ]}
-                onPress={() => handlePageChange(index)}
-              />
-            ))}
-          </View>
-
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-            <Text style={styles.nextButtonText}>
-              {currentPage === 2 
-                ? (currentTranslations.start_button || "Get Started") 
-                : (currentTranslations.next_button || "Next")}
-            </Text>
-          </TouchableOpacity>
-        </View>
       </Animated.View>
     </SafeAreaView>
   );
@@ -158,87 +165,91 @@ const IntroScreens = ({ onComplete, language, translations }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fff',
+    width: width,
+    paddingHorizontal: 0,
+    marginTop: -17,
   },
   contentContainer: {
     flex: 1,
-    justifyContent: 'space-between',
   },
   slide: {
-    width,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contentWrapper: {
+    width: width, 
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 40,
-    paddingBottom: 150,
-    paddingHorizontal: 20,
+    backgroundColor: '#000',
   },
   imageContainer: {
-    width: width * 0.8,
-    height: height * 0.3,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40,
+    width: width,
+    height: height * 0.85,
+    position: 'relative',
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: width,
+    height: height * 0.5, 
+    position: 'relative',
+    top: 0,
+    left: 0,
+    resizeMode: 'stretch', 
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 16,
-    color: '#c4c4c4',
-    textAlign: 'center',
-    paddingHorizontal: 10,
-    lineHeight: 24,
-  },
-  bottomControls: {
+  contentCard: {
+    backgroundColor: '#FFF',
+    paddingHorizontal: 0,
+    paddingTop: 30,
+    paddingBottom: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+    height: height * 0.36,
     alignItems: 'center',
-    paddingBottom: 40,
   },
-  pagination: {
+  title: {
+    fontSize: 25,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 25,
+    marginBottom: 40,
+    paddingHorizontal: 10,
+  },
+  paginationContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 15,
   },
   paginationDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    marginHorizontal: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 5,
   },
   paginationDotActive: {
-    backgroundColor: '#fff',
-    width: 20,
+    backgroundColor: '#333',
   },
   nextButton: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: '#000',
     paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 30,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    width: width - 40,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 200,
+    marginBottom: 25,
+    marginHorizontal: 20,
   },
   nextButtonText: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#FFF',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });

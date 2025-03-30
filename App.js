@@ -17,13 +17,13 @@ import {
   Modal,
   AppState,
   StatusBar,
-  SafeAreaView,
 } from 'react-native';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import translations from './translations.json';
 import CustomLanguageSelector from './CustomLanguageSelector';
 import ResultsPopup from './ResultsPopup';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import getStyles from './Styles.js';
 import QuestionsStep from './QuestionsStep';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
@@ -1345,32 +1345,25 @@ const CombinedAnalysisApp = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-      <View style={{ flex: 1 }}>
-        <ScrollView style={styles.container}>
-          <View style={styles.header}>
-            <View style={styles.headerTopRow}>
-              <View style={styles.languageWrapper}>
-                <CustomLanguageSelector language={language} setLanguage={setLanguage} />
-              </View>
-              <Text style={styles.headerTitle}>{translations[language].appTitle}</Text>
-              <View style={styles.logoContainer}>
-                <Image source={require('./logo.png')} style={styles.smallLogo} resizeMode="contain" />
-              </View>
-            </View>
-          </View>
-          <View style={styles.main}>
-            {currentStep === 0 && renderIntroStep()}
-            {currentStep === 1 && <GoogleSignIn onSignInSuccess={handleSignInSuccess} />}
-            {currentStep === 2 && renderPetUploadStep()}
-            {currentStep === 3 && renderFaceUploadStep()}
-            {currentStep === 4 && renderQuestionsStep()}
-            {currentStep === 5 && isAnalyzing && renderAnalysisStep()}
-            {currentStep === 6 && renderResultsStep()}
-          </View>
-        </ScrollView>
-        <BannerAdComponent adUnitId={bannerAdUnitId} />
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <View style={styles.headerContainer}>
+        <View style={styles.languageContainer}>
+          <CustomLanguageSelector language={language} setLanguage={setLanguage} />
+        </View>
       </View>
+      <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={styles.main}>
+          {currentStep === 0 && renderIntroStep()}
+          {currentStep === 1 && <GoogleSignIn onSignInSuccess={handleSignInSuccess} />}
+          {currentStep === 2 && renderPetUploadStep()}
+          {currentStep === 3 && renderFaceUploadStep()}
+          {currentStep === 4 && renderQuestionsStep()}
+          {currentStep === 5 && isAnalyzing && renderAnalysisStep()}
+          {currentStep === 6 && renderResultsStep()}
+        </View>
+      </ScrollView>
+      {currentStep !== 0 && <BannerAdComponent adUnitId={bannerAdUnitId} />}
+
       <ResultsPopup {...popupProps} />
     </SafeAreaView>
   );

@@ -12,42 +12,16 @@ const getStyles = (COLORS, SHADOWS) =>
     },
     safeArea: {
       flex: 1,
+      backgroundColor: '#000', // StatusBar ile uyumlu bir arka plan rengi
     },
-    header: {
-      backgroundColor: COLORS.primary,
-      padding: 20,
-      alignItems: 'center',
-      borderBottomLeftRadius: 20,
-      borderBottomRightRadius: 20,
-      ...SHADOWS.medium,
+    headerContainer: {
+      height: 60, // Hayali header yüksekliği
+      backgroundColor: '#000', // Arka planla aynı renk
+      justifyContent: 'center', // Dikeyde dil filtresi için alan
+      paddingHorizontal: 10, // Sol ve sağdan boşluk
     },
-    headerTopRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: '100%',
-    },
-    languageWrapper: {
-      width: 40,
-      alignItems: 'flex-start',
-      justifyContent: 'center',
-    },
-    logoContainer: {
-      width: 40,
-      alignItems: 'flex-end',
-      justifyContent: 'center',
-    },
-    smallLogo: {
-      width: 40,
-      height: 40,
-    },
-    headerTitle: {
-      color: COLORS.dark,
-      fontSize: 20,
-      fontWeight: 'bold',
-      letterSpacing: 0.5,
-      textAlign: 'center',
-      flex: 1,
+    languageContainer: {
+      alignItems: 'flex-start', // Sola hizalama
     },
     main: {
       padding: 18,
@@ -58,7 +32,7 @@ const getStyles = (COLORS, SHADOWS) =>
       marginBottom: 25,
       width: '100%',
       paddingHorizontal: 15,
-      alignItems: 'center', // Bu özellik contentContainerStyle'a taşındı, burada kalabilir çünkü View bileşenlerinde sorun olmaz
+      alignItems: 'center',
     },
     scrollView: {
       flex: 1,

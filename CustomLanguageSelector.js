@@ -72,8 +72,8 @@ const CustomLanguageSelector = ({ language, setLanguage }) => {
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'flex-start', // Sola hizalama
+    justifyContent: 'flex-start', // Yukarı hizalama
   },
   flagButton: {
     width: 40,
@@ -94,8 +94,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     position: 'absolute',
-    top: 80, // Position below header
-    left: 15, // Match position of language selector
+    top: 70, // headerContainer yüksekliği (60) + 10px boşluk
+    left: 15, // languageContainer ile uyumlu (paddingHorizontal: 10 + 5px boşluk)
     backgroundColor: '#fff',
     borderRadius: 0, // No rounded corners
     overflow: 'hidden',
@@ -112,5 +112,4 @@ const styles = StyleSheet.create({
     height: 20,
   },
 });
-
 export default CustomLanguageSelector;
