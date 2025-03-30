@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 0,
   },
   closeButton: {
     padding: 5,
@@ -683,8 +683,8 @@ const styles = StyleSheet.create({
     borderRadius: SCREEN_WIDTH * 0.125,
     borderWidth: 2,
     borderColor: '#fff',
-    marginBottom: 15,
-    marginTop: 25,
+    marginBottom: 7,
+    marginTop: 20,
   },
   imageLabel: {
     color: '#fff',
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     textAlign: 'center',
-    marginVertical: 10,
+    marginVertical: 20,
     lineHeight: 20,
   },
   recommendationTitle: {
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 20,
   },
   recommendationText: {
     color: '#fff',
