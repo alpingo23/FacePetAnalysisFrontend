@@ -17,6 +17,10 @@ import {
   Modal,
   AppState,
   StatusBar,
+  Share,
+  Clipboard,
+  TextInput,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
@@ -38,6 +42,7 @@ import { initializeApp } from '@react-native-firebase/app';
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import storage from '@react-native-firebase/storage';
+import { BlurView } from '@react-native-community/blur';
 
 const dogTraits = require('./dogTraits.json');
 
@@ -163,7 +168,12 @@ const CombinedAnalysisApp = () => {
   const [isPaid, setIsPaid] = useState(false);
   const [previousResults, setPreviousResults] = useState([]);
   const [userId, setUserId] = useState(null);
-
+  const [referralCode, setReferralCode] = useState(null);
+  const [referredBy, setReferredBy] = useState(null);
+  const [referralCount, setReferralCount] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isProUnlocked, setIsProUnlocked] = useState(false);
+ 
   const interstitialAdRef = useRef(InterstitialAd.createForAdRequest(
     Platform.OS === 'ios' ? 'ca-app-pub-3940256099942544/4411468910' : 'ca-app-pub-3940256099942544/1033173712' // Test ID'leri
   ));
@@ -173,15 +183,11 @@ const CombinedAnalysisApp = () => {
 
   // Get styles with fixed dark theme
   const styles = getStyles(COLORS, SHADOWS);
+
   const uploadImageToStorage = async (imageData, userId, fileName) => {
     try {
-      // Storage'da dosya yolu: users/{userId}/{fileName}
       const reference = storage().ref(`users/${userId}/${fileName}`);
-      
-      // Base64 string'ini yüklüyoruz (data URI formatında: data:image/jpeg;base64,...)
       await reference.putString(imageData, 'data_url');
-      
-      // Yüklenen resmin URL'sini alıyoruz
       const url = await reference.getDownloadURL();
       console.log(`[STORAGE] Image uploaded successfully: ${url}`);
       return url;
@@ -191,23 +197,38 @@ const CombinedAnalysisApp = () => {
     }
   };
 
-  // AsyncStorage'dan userId'yi yükleme fonksiyonu
+  const generateReferralCode = () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return code;
+  };
+
   const loadUserIdFromStorage = async () => {
     try {
       const storedUserId = await AsyncStorage.getItem('userId');
+      const storedReferralCode = await AsyncStorage.getItem('referralCode');
+      const storedReferralCount = await AsyncStorage.getItem('referralCount');
+      const storedReferredBy = await AsyncStorage.getItem('referredBy');
+
       if (storedUserId) {
         setUserId(storedUserId);
         setIsSignedIn(true);
+        setReferralCode(storedReferralCode || generateReferralCode());
+        setReferralCount(parseInt(storedReferralCount) || 0);
+        setReferredBy(storedReferredBy || null);
+        setIsProUnlocked((parseInt(storedReferralCount) || 0) >= 2);
         return storedUserId;
       }
       return null;
     } catch (error) {
-      console.error('[ASYNC_STORAGE] Error loading userId from AsyncStorage:', error);
+      console.error('[ASYNC_STORAGE] Error loading user data:', error);
       return null;
     }
   };
 
-  // AsyncStorage'a userId'yi kaydetme fonksiyonu
   const saveUserIdToStorage = async (userId) => {
     try {
       await AsyncStorage.setItem('userId', userId);
@@ -217,12 +238,76 @@ const CombinedAnalysisApp = () => {
     }
   };
 
-  // Firebase Functions
+  const saveReferralData = async (userId, referralCode, referredBy = null) => {
+    try {
+      await firestore()
+        .collection('users')
+        .doc(userId)
+        .set(
+          {
+            referralCode: referralCode,
+            referredBy: referredBy,
+            referralCount: 0,
+            createdAt: firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+      await AsyncStorage.setItem('referralCode', referralCode);
+      if (referredBy) {
+        await AsyncStorage.setItem('referredBy', referredBy);
+      }
+    } catch (error) {
+      console.error('[FIRESTORE] Error saving referral data:', error);
+    }
+  };
+
+  const updateReferralCount = async (referrerId) => {
+    try {
+      console.log('[FIRESTORE] Updating referral count for user:', referrerId);
+      
+      // Firestore'da Transaction kullanarak güvenli bir şekilde sayacı artır
+      await firestore().runTransaction(async (transaction) => {
+        // Referrer kullanıcının dokümanını al
+        const referrerRef = firestore().collection('users').doc(referrerId);
+        const referrerDoc = await transaction.get(referrerRef);
+        
+        if (!referrerDoc.exists) {
+          console.log('[FIRESTORE] Referrer document does not exist:', referrerId);
+          throw new Error('Referrer document does not exist');
+        }
+        
+        // Mevcut sayaç değerini al (değer yoksa 0 kullan)
+        const currentCount = referrerDoc.data().referralCount || 0;
+        const newCount = currentCount + 1;
+        
+        console.log(`[FIRESTORE] Updating count from ${currentCount} to ${newCount}`);
+        
+        // Dokümanı güncelle
+        transaction.update(referrerRef, { referralCount: newCount });
+        
+        // Eğer bu kullanıcı, giriş yapmış olan kullanıcı ise, state'i de güncelle
+        if (userId === referrerId) {
+          console.log('[FIRESTORE] Updating current user state with new count:', newCount);
+          setReferralCount(newCount);
+          setIsProUnlocked(newCount >= 2);
+          await AsyncStorage.setItem('referralCount', newCount.toString());
+        }
+      });
+      
+      console.log('[FIRESTORE] Referral count updated successfully');
+      return true;
+    } catch (error) {
+      console.error('[FIRESTORE] Error updating referral count:', error);
+      return false;
+    }
+  };
+
   const saveResult = async (userId, petImage, faceImage, { compatibility, faceResult, petResult }) => {
     try {
       const petImageUrl = await uploadImageToStorage(petImage, userId, `pet_${Date.now()}.jpg`);
       const faceImageUrl = await uploadImageToStorage(faceImage, userId, `face_${Date.now()}.jpg`);
-  
+
       const result = {
         timestamp: firestore.FieldValue.serverTimestamp(),
         compatibilityScore: compatibility?.score || 0,
@@ -230,19 +315,19 @@ const CombinedAnalysisApp = () => {
         petImageUrl,
         faceImageUrl,
         details: compatibility?.details || [],
-        faceResult: faceResult || null, // Direkt analizden gelen veriyi kullan
+        faceResult: faceResult || null,
         petResult: petResult || null,
         userQuestions: userQuestions || null,
       };
-  
-      console.log('[saveResult] Saving to Firestore:', JSON.stringify(result, null, 2)); // Hata ayıklama
-  
+
+      console.log('[saveResult] Saving to Firestore:', JSON.stringify(result, null, 2));
+
       await firestore()
         .collection('users')
         .doc(userId)
         .collection('results')
         .add(result);
-  
+
       console.log('Result saved to Firestore for user:', userId);
       return result;
     } catch (error) {
@@ -259,7 +344,7 @@ const CombinedAnalysisApp = () => {
         .collection('results')
         .orderBy('timestamp', 'desc')
         .get();
-  
+
       const results = snapshot.docs.map(doc => ({
         id: doc.id,
         timestamp: doc.data().timestamp ? doc.data().timestamp.toDate().getTime() : Date.now(),
@@ -272,7 +357,7 @@ const CombinedAnalysisApp = () => {
         petResult: doc.data().petResult || null,
         userQuestions: doc.data().userQuestions || null,
       }));
-  
+
       return results;
     } catch (error) {
       console.error('Error loading previous results from Firestore:', error);
@@ -280,7 +365,6 @@ const CombinedAnalysisApp = () => {
     }
   };
 
-  // Uygulama açıldığında userId ve previousResults'ı yükle
   useEffect(() => {
     const initializeAppState = async () => {
       const storedUserId = await loadUserIdFromStorage();
@@ -296,51 +380,105 @@ const CombinedAnalysisApp = () => {
     };
 
     initializeAppState();
-  }, []); // Boş bağımlılık dizisi, sadece uygulama açıldığında çalışır
+  }, []);
 
   const handleSignInSuccess = async (userInfo) => {
-    const newUserId = userInfo.userId; // Bu artık Firebase UID'si
-    console.log('[SIGN-IN] Firebase UID:', newUserId);
+    const newUserId = userInfo.userId;
     setUserId(newUserId);
     setIsSignedIn(true);
-    setCurrentStep(2); // Pet Upload adımına geç
-  
-    // userId'yi AsyncStorage'a kaydet
     await saveUserIdToStorage(newUserId);
-  
-    if (newUserId) {
-      try {
-        const results = await loadPreviousResults(newUserId);
-        setPreviousResults(results);
-        console.log('[FIRESTORE] Previous results loaded:', results);
-      } catch (error) {
-        console.error('[FIRESTORE] Error in handleSignInSuccess:', error);
+    
+    // Kullanıcının daha önce referral girip girmediğini kontrol et
+    try {
+      const userDoc = await firestore()
+        .collection('users')
+        .doc(newUserId)
+        .get();
+      
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        
+        // Kullanıcının verileri varsa ve referredBy alanı doldurulmuşsa
+        if (userData && (userData.referredBy || userData.referralCode)) {
+          // Kullanıcının verilerini state'e yükle
+          setReferralCode(userData.referralCode || generateReferralCode());
+          setReferredBy(userData.referredBy || null);
+          setReferralCount(userData.referralCount || 0);
+          setIsProUnlocked((userData.referralCount || 0) >= 2);
+          
+          // Referral sayfasını atlayıp direkt Pet Upload adımına geç
+          setCurrentStep(2);
+        } else {
+          // Referral verisi yoksa referral kodu giriş sayfasına yönlendir
+          setCurrentStep(1.5);
+        }
+      } else {
+        // Kullanıcı daha önce kaydedilmemişse referral kodu giriş sayfasına yönlendir
+        setCurrentStep(1.5);
       }
+    } catch (error) {
+      console.error('Error checking user referral data:', error);
+      // Hata durumunda da referral kodu giriş sayfasına yönlendir
+      setCurrentStep(1.5);
     }
   };
 
-  // Popup Handlers
+  const handleReferralCodeSubmit = async () => {
+    if (referredBy && referredBy.length !== 6) {
+      Alert.alert(
+        translations[language].invalidCode || "Invalid Code",
+        translations[language].invalidCodeMessage || "Referral code must be 6 characters long."
+      );
+      return;
+    }
+    
+    let userReferralCode = referralCode || generateReferralCode();
+    setReferralCode(userReferralCode);
+
+    await saveReferralData(userId, userReferralCode, referredBy);
+
+    if (referredBy) {
+      const referrerSnapshot = await firestore()
+        .collection('users')
+        .where('referralCode', '==', referredBy)
+        .get();
+
+      if (!referrerSnapshot.empty) {
+        const referrerId = referrerSnapshot.docs[0].id;
+        await updateReferralCount(referrerId);
+      } else {
+        Alert.alert(
+          translations[language].invalidCode || "Invalid Code",
+          translations[language].codeNotFound || "The referral code you entered does not exist."
+        );
+        return;
+      }
+    }
+    
+    setCurrentStep(2); // Proceed to Pet Upload step
+  };
+
   const handleClosePopup = () => {
     setShowResultsPopup(false);
-    setCurrentStep(2); // Upload Pet Image sayfasına dön
+    setCurrentStep(2);
   };
 
   const handleSeeMoreDetails = () => {
     setShowResultsPopup(false);
-    setCurrentStep(6); // Sonuçlar sayfasına git
+    setCurrentStep(6);
   };
 
   useEffect(() => {
     blinkInterval.current = setInterval(() => {
       setIsLVisible((prev) => !prev);
     }, 500);
-  
+
     const handleAppStateChange = (nextAppState) => {
       console.log('[APP] AppState changed to:', nextAppState);
     };
-  
+
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-  
+
     return () => {
       if (blinkInterval.current) clearInterval(blinkInterval.current);
       if (animationTimer.current) cancelAnimationFrame(animationTimer.current);
@@ -348,45 +486,52 @@ const CombinedAnalysisApp = () => {
     };
   }, [currentStep]);
 
-  // Interstitial Ad Event Listeners
   useEffect(() => {
     if (currentStep !== 0) {
       const interstitialAd = interstitialAdRef.current;
-  
+
       const unsubscribeLoaded = interstitialAd.addAdEventListener(AdEventType.LOADED, () => {
         console.log('[AD] Interstitial ad loaded successfully at:', Date.now());
         setIsAdLoaded(true);
         setIsAdLoading(false);
       });
-  
+
       const unsubscribeError = interstitialAd.addAdEventListener(AdEventType.ERROR, (error) => {
         console.log('[AD] Ad failed to load at:', Date.now(), 'Error:', error);
         setIsAdLoaded(false);
         setIsAdLoading(false);
-        setCurrentStep(6);
+        if (isProUnlocked) {
+          setShowResultsPopup(true);
+        } else {
+          setCurrentStep(6);
+        }
       });
-  
+
       const unsubscribeClosed = interstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
         console.log('[AD] Interstitial ad closed at:', Date.now());
         setIsAdLoaded(false);
         setIsAdLoading(true);
-        setCurrentStep(6);
+        if (isProUnlocked) {
+          setShowResultsPopup(true);
+        } else {
+          setCurrentStep(6);
+        }
         setTimeout(() => {
           console.log('[AD] Loading new interstitial ad after close at:', Date.now());
           interstitialAd.load();
         }, 100);
       });
-  
+
       const unsubscribeOpened = interstitialAd.addAdEventListener(AdEventType.OPENED, () => {
         console.log('[AD] Interstitial ad opened at:', Date.now());
       });
-  
+
       if (!isAdLoading && !isAdLoaded) {
         console.log('[AD] Initial loading of interstitial ad at:', Date.now());
         setIsAdLoading(true);
         interstitialAd.load();
       }
-  
+
       return () => {
         unsubscribeLoaded();
         unsubscribeError();
@@ -394,9 +539,8 @@ const CombinedAnalysisApp = () => {
         unsubscribeOpened();
       };
     }
-  }, [currentStep, isAdLoading, isAdLoaded]);
+  }, [currentStep, isAdLoading, isAdLoaded, isProUnlocked]);
 
-  
   const formatBreedName = (breed) => {
     if (!breed) return translations[language].unknown || 'Unknown';
     const breedPart = breed.split('-')[1] || breed;
@@ -829,57 +973,52 @@ const CombinedAnalysisApp = () => {
       setError(translations[language].errorUploadFaceImage);
       return;
     }
-    setCurrentStep(4); // Move to Questions step
+    setCurrentStep(4);
   };
 
   const analyzeImages = async () => {
     setIsAnalyzing(true);
-    setCurrentStep(5); // Analysis step
+    setCurrentStep(5);
     setAnalysisProgress(0);
     setError(null);
-  
-    // İlk aşama: Landmark'lar gelene kadar çok yavaş dolum
+
     let progress = 0;
     let apiCompleted = false;
     const animateInitialProgress = () => {
       return new Promise((resolve) => {
         const interval = setInterval(() => {
           if (!apiCompleted) {
-            progress += 0.5; // Çok yavaş dolum: Her 200ms'de %0.5 artar
-            setAnalysisProgress(Math.min(progress, 99)); // %100'e kadar gitmesin, API sonrası tamamlanır
+            progress += 1;
+            setAnalysisProgress(Math.min(progress, 99));
           }
           if (apiCompleted) {
             clearInterval(interval);
             resolve();
           }
-        }, 200); // 200ms ile gerçekten yavaş dolum
+        }, 500);
       });
     };
-  
-    // API çağrılarını ve animasyonu paralel başlat
+
     const animationPromise = animateInitialProgress();
     const [faceDetections, petAnalysis] = await Promise.all([analyzeFace(), analyzePet()]);
     apiCompleted = true;
-  
-    // API tamamlandığında animasyonu bekle ve son durumu al
+
     await animationPromise;
-    const preApiProgress = progress; // API tamamlandığındaki ilerleme değerini sakla
-  
+    const preApiProgress = progress;
+
     if (!faceDetections || !petAnalysis) {
       setIsAnalyzing(false);
-      setCurrentStep(4); // Back to Questions step if failed
+      setCurrentStep(4);
       setError(translations[language].errorAnalysisFailed || 'Analysis failed. Please try again.');
       return;
     }
-  
+
     const compatibilityResult = calculateCompatibilityScore(petAnalysis, faceDetections, userQuestions);
-  
-    // State'leri güncelle
+
     setFaceResult(faceDetections);
     setPetResult(petAnalysis);
     setCompatibility(compatibilityResult);
-  
-    // Firebase işlemleri
+
     if (userId) {
       try {
         const savedResult = await saveResult(userId, petImage, faceImage, {
@@ -895,13 +1034,12 @@ const CombinedAnalysisApp = () => {
         setError(translations[language].firestoreError || 'Failed to save results to Firestore.');
       }
     }
-  
-    // İkinci aşama: API sonrası o anki değerden %100'e 5 saniyede smooth dolum
+
     const animateFinalProgress = () => {
       return new Promise((resolve) => {
-        let finalProgress = preApiProgress; // API sonrası mevcut ilerleme
-        const remainingPercentage = 100 - finalProgress; // Kalan yüzde
-        const step = remainingPercentage / (5000 / 50); // 5 saniyede kalan farkı kapatacak adım
+        let finalProgress = preApiProgress;
+        const remainingPercentage = 100 - finalProgress;
+        const step = remainingPercentage / (5000 / 50);
         const interval = setInterval(() => {
           finalProgress += step;
           setAnalysisProgress(Math.min(Math.round(finalProgress), 100));
@@ -909,30 +1047,40 @@ const CombinedAnalysisApp = () => {
             clearInterval(interval);
             resolve();
           }
-        }, 50); // 50ms ile smooth dolum (5 saniyede 100 adım)
+        }, 50);
       });
     };
-  
-    await animateFinalProgress(); // Animasyonun tamamlanmasını bekle
-    setIsAnalyzing(false); // Analiz ekranını kapat
-  
-    // İlk analizden sonra ResultsPopup'ı göster
-    setShowResultsPopup(true);
-  
-    // Reklam gösterimi
-    if (isAdLoaded && !isAdLoading) {
-      try {
-        interstitialAdRef.current.show();
-      } catch (adError) {
-        console.error('[AD] Error showing ad:', adError);
-        setCurrentStep(6); // Reklam başarısız olursa Results step'e geç
+
+    await animateFinalProgress();
+    setIsAnalyzing(false);
+
+    if (isProUnlocked) {
+      if (isAdLoaded && !isAdLoading) {
+        try {
+          interstitialAdRef.current.show();
+        } catch (adError) {
+          console.error('[AD] Error showing ad:', adError);
+          setShowResultsPopup(true);
+        }
+      } else {
+        setShowResultsPopup(true);
       }
     } else {
-      setCurrentStep(6); // Reklam yoksa direkt Results step'e geç
+      if (isAdLoaded && !isAdLoading) {
+        try {
+          interstitialAdRef.current.show();
+        } catch (adError) {
+          console.error('[AD] Error showing ad:', adError);
+          setCurrentStep(6);
+        }
+      } else {
+        setCurrentStep(6);
+      }
     }
   };
+
   const resetAnalysis = () => {
-    setCurrentStep(2); // Reset to Pet Upload step
+    setCurrentStep(2);
     setFaceImage(null);
     setPetImage(null);
     setPetFile(null);
@@ -1059,11 +1207,195 @@ const CombinedAnalysisApp = () => {
 
   const renderIntroStep = () => (
     <IntroScreens
-      onComplete={() => setCurrentStep(1)} // Move to Google Sign-In step
+      onComplete={() => setCurrentStep(1)}
       language={language}
       translations={translations}
     />
   );
+
+  const renderReferralCodeEntryPage = () => {
+    return (
+      <View style={styles.stepContainer}>
+        <Text style={styles.stepTitle}>
+          {translations[language].referralPromptTitle || "Do you have a referral code?"}
+        </Text>
+        <TextInput
+          style={styles.referralInput}
+          placeholder={translations[language].enterReferralCode || "Enter your code here"}
+          placeholderTextColor="#888"
+          onChangeText={(text) => setReferredBy(text.toUpperCase())}
+          value={referredBy}
+          autoCapitalize="characters"
+          maxLength={6}
+        />
+        <TouchableOpacity
+          style={[styles.actionButton, { 
+            backgroundColor: '#6C63FF', 
+            width: 150,
+            paddingVertical: 12,
+            paddingHorizontal: 0,
+            borderRadius: 10,
+            marginBottom: 15
+          }]}
+          onPress={async () => {
+            // Referral kodu gerekmiyorsa direkt geç
+            if (!referredBy || referredBy.trim() === '') {
+              Alert.alert(
+                translations[language].noCode || "No Referral Code",
+                translations[language].enterCodeMessage || "Please enter a referral code or use the Skip button."
+              );
+              return;
+            }
+
+            // Referral kodu formatını kontrol et - 6 karakter olmalı
+            if (referredBy.length !== 6) {
+              Alert.alert(
+                translations[language].invalidCode || "Invalid Code",
+                translations[language].invalidCodeMessage || "Referral code must be 6 characters long."
+              );
+              return;
+            }
+
+            // Kendi kodunu referral olarak girmeyi engelle
+            if (referralCode && referredBy === referralCode) {
+              Alert.alert(
+                translations[language].invalidCode || "Invalid Code",
+                translations[language].cannotUseSelfCode || "You cannot use your own referral code."
+              );
+              return;
+            }
+
+            // Yükleniyor durumunu göster
+            setIsLoading(true);
+
+            try {
+              // Firestore'da referral kodunu ara
+              console.log('[REFERRAL] Searching for referrer with code:', referredBy);
+              const querySnapshot = await firestore()
+                .collection('users')
+                .where('referralCode', '==', referredBy)
+                .get();
+              
+              // Referral kodu bulunamadıysa uyarı göster
+              if (querySnapshot.empty) {
+                console.log('[REFERRAL] No referrer found with code:', referredBy);
+                setIsLoading(false);
+                Alert.alert(
+                  translations[language].invalidCode || "Invalid Code",
+                  translations[language].codeNotFound || "The referral code you entered does not exist."
+                );
+                return;
+              }
+
+              // Referral kodu bulundu, kullanıcı bilgilerini al
+              const referrerDoc = querySnapshot.docs[0];
+              const referrerId = referrerDoc.id;
+              console.log('[REFERRAL] Found referrer ID:', referrerId);
+
+              // Kendini referral etmeyi engelle
+              if (referrerId === userId) {
+                setIsLoading(false);
+                Alert.alert(
+                  translations[language].invalidCode || "Invalid Code",
+                  translations[language].cannotReferSelf || "You cannot refer yourself."
+                );
+                return;
+              }
+
+              // Kullanıcının kendi referral kodunu oluştur veya mevcut kodu kullan
+              let userReferralCode = referralCode || generateReferralCode();
+              setReferralCode(userReferralCode);
+              
+              // Referral veren kullanıcının count değerini artır
+              const referrerRef = firestore().collection('users').doc(referrerId);
+              const referrerData = referrerDoc.data();
+              const currentCount = referrerData.referralCount || 0;
+              const newCount = currentCount + 1;
+              
+              console.log(`[REFERRAL] Updating count from ${currentCount} to ${newCount}`);
+              
+              // Referral verenin dokümanını güncelle
+              await referrerRef.update({ 
+                referralCount: newCount 
+              });
+              
+              console.log('[REFERRAL] Referral count updated successfully');
+              
+              // Kullanıcının kendi referral bilgilerini kaydet
+              await saveReferralData(userId, userReferralCode, referredBy);
+              
+              // İşlem tamamlandı, sonraki sayfaya geç
+              setIsLoading(false);
+              setCurrentStep(2);
+              
+            } catch (error) {
+              console.error('[REFERRAL] Error during referral process:', error);
+              setIsLoading(false);
+              Alert.alert(
+                translations[language].error || "Error",
+                translations[language].generalError || "An error occurred. Please try again."
+              );
+            }
+          }}
+        >
+          <Text style={styles.buttonText}>
+            {translations[language].continue || "Continue"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            marginTop: 5,
+            padding: 10
+          }}
+          onPress={async () => {
+            // Skip - doğrudan ileri
+            setIsLoading(true);
+            
+            try {
+              // Kullanıcının kendi referral kodunu oluştur
+              let userReferralCode = referralCode || generateReferralCode();
+              setReferralCode(userReferralCode);
+              
+              // Null referral ile kaydet
+              await saveReferralData(userId, userReferralCode, null);
+              
+              // İlerle
+              setIsLoading(false);
+              setCurrentStep(2);
+            } catch (error) {
+              console.error("[REFERRAL] Skip referral error:", error);
+              setIsLoading(false);
+              setCurrentStep(2); // Hata olsa bile ilerle
+            }
+          }}
+        >
+          <Text style={{
+            color: '#888',
+            fontSize: 16,
+            textAlign: 'center'
+          }}>
+            {translations[language].skip || "Skip"}
+          </Text>
+        </TouchableOpacity>
+        
+        {/* Yükleniyor göstergesi */}
+        {isLoading && (
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+          }}>
+            <ActivityIndicator size="large" color="#6C63FF" />
+          </View>
+        )}
+      </View>
+    );
+  };
 
   const renderPetUploadStep = () => (
     <View style={styles.stepContainer}>
@@ -1099,8 +1431,8 @@ const CombinedAnalysisApp = () => {
         results={previousResults}
         translations={translations}
         language={language}
-        currentPetImage={petImage} // Ekledik
-        currentFaceImage={faceImage} // Ekledik
+        currentPetImage={petImage}
+        currentFaceImage={faceImage}
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -1145,8 +1477,8 @@ const CombinedAnalysisApp = () => {
         results={previousResults}
         translations={translations}
         language={language}
-        currentPetImage={petImage} // Ekledik
-        currentFaceImage={faceImage} // Ekledik
+        currentPetImage={petImage}
+        currentFaceImage={faceImage}
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -1161,7 +1493,7 @@ const CombinedAnalysisApp = () => {
       userQuestions={userQuestions}
       setUserQuestions={setUserQuestions}
       onContinue={analyzeImages}
-      onBack={() => setCurrentStep(3)} // Back to Face Upload
+      onBack={() => setCurrentStep(3)}
       faceResult={optimizedFaceResult}
       showStartAnalysisButton={true}
     />
@@ -1195,14 +1527,14 @@ const CombinedAnalysisApp = () => {
                 borderRadius: 20,
                 zIndex: 1
               }} />
-              <Image 
-                source={{ uri: faceImage }} 
-                style={{ 
-                  width: 300, 
+              <Image
+                source={{ uri: faceImage }}
+                style={{
+                  width: 300,
                   height: 300,
                   borderRadius: 20
-                }} 
-                resizeMode="contain" 
+                }}
+                resizeMode="contain"
               />
               {isLoading && (
                 <View style={styles.loadingOverlay}>
@@ -1291,14 +1623,14 @@ const CombinedAnalysisApp = () => {
                 borderRadius: 20,
                 zIndex: 1
               }} />
-              <Image 
-                source={{ uri: petImage }} 
-                style={{ 
-                  width: 300, 
+              <Image
+                source={{ uri: petImage }}
+                style={{
+                  width: 300,
                   height: 300,
                   borderRadius: 20
-                }} 
-                resizeMode="contain" 
+                }}
+                resizeMode="contain"
               />
               {petResult && petResult.detection && petResult.detection.box && (
                 <View
@@ -1330,7 +1662,7 @@ const CombinedAnalysisApp = () => {
           score: detail.score,
         }))
       : [];
-  
+
     const faceAnalysis = faceResult && faceResult[0]
       ? {
           age: faceResult[0].age || 30,
@@ -1342,7 +1674,7 @@ const CombinedAnalysisApp = () => {
           age: 30,
           expressions: { happy: 0, sad: 0, angry: 0, fearful: 0, disgusted: 0, surprised: 0, neutral: 0 },
         };
-  
+
     const petAnalysis = petResult
       ? {
           energy: petResult.energy || 50,
@@ -1356,11 +1688,22 @@ const CombinedAnalysisApp = () => {
           independence: 50,
           groomingNeed: 50,
         };
-  
-    const energyAndHappiness = faceAnalysis.expressions.happy || 50;
-    const emotionAndExpression = Object.values(faceAnalysis.expressions).reduce((sum, value) => sum + value, 0) / 7 || 50;
-    const environment = userQuestions.hoursAtHome === 'more_than_8' ? 80 : 50;
-  
+
+    const energyAndHappiness = Math.min(85 + (faceAnalysis.expressions.happy * 15), 96);
+    const emotionAndExpression = Math.min(78 + (Object.values(faceAnalysis.expressions).reduce((sum, value) => sum + value, 0) * 2), 95);
+    const environment = userQuestions.hoursAtHome === 'more_than_8' ? 88 : 79;
+    const compatibilityScore = compatibility?.score || Math.floor(Math.random() * 11) + 85;
+
+    const randomTeaserInsights = [
+      translations[language].teaserInsight1 || "We found a surprising energy match!",
+      translations[language].teaserInsight2 || "Your expressions reveal a special connection",
+      translations[language].teaserInsight3 || "You might need to adjust one key habit",
+      translations[language].teaserInsight4 || "There's an unexpected personality alignment",
+    ];
+
+    const shuffledInsights = [...randomTeaserInsights].sort(() => 0.5 - Math.random());
+    const selectedInsights = shuffledInsights.slice(0, 2);
+
     return (
       <ScrollView
         style={[styles.scrollView, { backgroundColor: '#000' }]}
@@ -1368,156 +1711,338 @@ const CombinedAnalysisApp = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.resultsHeader}>
-          <Text style={styles.eyesIcon}>👀</Text>
-          <Text style={styles.resultsTitle}>Reveal your results</Text>
+          <Text style={styles.sparkleIcon}>✨</Text>
+          <Text style={styles.resultsTitle}>{translations[language].magicMatchFound || "Your Magic Match!"}</Text>
+          <View style={styles.scoreCircleContainer}>
+            <View style={styles.scoreCircle}>
+              <Text style={styles.scoreValue}>{compatibilityScore}<Text style={styles.scorePercent}>%</Text></Text>
+              <Text style={styles.scoreLabel}>{translations[language].compatibilityLabel || "MATCH"}</Text>
+            </View>
+          </View>
         </View>
-        <Text style={styles.resultsSubtitle}>
-          {translations[language].inviteFriendsOrGetPro || 'Invite 3 friends or get Pro+ to view your results'}
-        </Text>
-        <View style={styles.imagesContainer}>
+
+        <View style={styles.imagesComparisonContainer}>
           <View style={styles.imageWithLabel}>
             {faceImage ? (
-              <Image source={{ uri: faceImage }} style={styles.circularImage} resizeMode="cover" />
+              <Image source={{ uri: faceImage }} style={styles.circularProfileImage} resizeMode="cover" />
             ) : (
-              <View style={styles.circularImage} />
+              <View style={styles.circularProfileImage} />
             )}
-            <Text style={styles.imageLabel}>{translations[language].human || 'Human'}</Text>
+            <Text style={styles.imageLabel}>{translations[language].you || 'You'}</Text>
           </View>
+
+          <View style={styles.heartContainer}>
+            <Text style={styles.heartIcon}>❤️</Text>
+          </View>
+
           <View style={styles.imageWithLabel}>
             {petImage ? (
-              <Image source={{ uri: petImage }} style={styles.circularImage} resizeMode="cover" />
+              <Image source={{ uri: petImage }} style={styles.circularProfileImage} resizeMode="cover" />
             ) : (
-              <View style={styles.circularImage} />
+              <View style={styles.circularProfileImage} />
             )}
             <Text style={styles.imageLabel} numberOfLines={1}>
               {formatBreedName(petResult?.predicted_label || '')}
             </Text>
           </View>
         </View>
-        <Text style={styles.teaserText}>
-          {translations[language].analyzedCompatibility || "We've analyzed your compatibility! Get PRO to see all details."}
-        </Text>
+
+        <View style={styles.insightsContainer}>
+          <Text style={styles.insightsTitle}>{translations[language].keyInsightsTitle || "Key Insights Discovered:"}</Text>
+          {selectedInsights.map((insight, index) => (
+            <View key={index} style={styles.insightItem}>
+              <Text style={styles.insightIcon}>🔍</Text>
+              <Text style={styles.insightText}>{insight}</Text>
+            </View>
+          ))}
+          <View style={styles.lockedInsightItem}>
+            <Text style={styles.insightIcon}>🔒</Text>
+            <Text style={styles.lockedInsightText}>{translations[language].lockedInsight || "3 more insights locked"}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.analysisTitle}>{translations[language].fullAnalysisTitle || "Your Complete Compatibility Analysis"}</Text>
+
         <View style={styles.blurredCategories}>
           <View style={styles.categoryRow}>
             <View style={styles.categoryColumn}>
-              <Text style={styles.categoryTitleSmall}>{translations[language].energyAndHappiness || 'Energy and Happiness'}</Text>
+              <Text style={styles.categoryTitleSmall}>{translations[language].energyAndHappiness || 'Energy & Happiness'}</Text>
               <View style={styles.blurredScoreContainer}>
                 <View style={styles.blurredScore}>
-                  <View style={styles.blurredContent} />
+                  <Text style={styles.hiddenScoreText}>{Math.round(energyAndHappiness)}%</Text>
                   <View style={styles.fakeBlurOverlay} />
                 </View>
               </View>
               <View style={styles.scoreProgressBar}>
-                <View style={[styles.scoreProgress, { width: '85%' }]} />
+                <View style={[styles.scoreProgress, { width: `${energyAndHappiness}%`, backgroundColor: '#4A8FE7' }]} />
               </View>
             </View>
             <View style={styles.categoryColumn}>
-              <Text style={styles.categoryTitleSmall}>{translations[language].ageLabel || 'Age'}</Text>
+              <Text style={styles.categoryTitleSmall}>{translations[language].perfectAge || 'Perfect Age Match'}</Text>
               <View style={styles.blurredScoreContainer}>
                 <View style={styles.blurredScore}>
-                  <View style={styles.blurredContent} />
+                  <Text style={styles.hiddenScoreText}>92%</Text>
                   <View style={styles.fakeBlurOverlay} />
                 </View>
               </View>
               <View style={styles.scoreProgressBar}>
-                <View style={[styles.scoreProgress, { width: '92%' }]} />
+                <View style={[styles.scoreProgress, { width: '92%', backgroundColor: '#6C63FF' }]} />
               </View>
             </View>
           </View>
+
           <View style={styles.categoryRow}>
             <View style={styles.categoryColumn}>
-              <Text style={styles.categoryTitleSmall}>{translations[language].emotionAndExpression || 'Emotion and Expression'}</Text>
+              <Text style={styles.categoryTitleSmall}>{translations[language].emotionAndExpression || 'Emotional Bond'}</Text>
               <View style={styles.blurredScoreContainer}>
                 <View style={styles.blurredScore}>
-                  <View style={styles.blurredContent} />
+                  <Text style={styles.hiddenScoreText}>{Math.round(emotionAndExpression)}%</Text>
                   <View style={styles.fakeBlurOverlay} />
                 </View>
               </View>
               <View style={styles.scoreProgressBar}>
-                <View style={[styles.scoreProgress, { width: '78%' }]} />
+                <View style={[styles.scoreProgress, { width: `${emotionAndExpression}%`, backgroundColor: '#9D65F9' }]} />
               </View>
             </View>
             <View style={styles.categoryColumn}>
-              <Text style={styles.categoryTitleSmall}>{translations[language].environment || 'Environment'}</Text>
+              <Text style={styles.categoryTitleSmall}>{translations[language].environment || 'Living Environment'}</Text>
               <View style={styles.blurredScoreContainer}>
                 <View style={styles.blurredScore}>
-                  <View style={styles.blurredContent} />
+                  <Text style={styles.hiddenScoreText}>{environment}%</Text>
                   <View style={styles.fakeBlurOverlay} />
                 </View>
               </View>
               <View style={styles.scoreProgressBar}>
-                <View style={[styles.scoreProgress, { width: '85%' }]} />
+                <View style={[styles.scoreProgress, { width: `${environment}%`, backgroundColor: '#5271FF' }]} />
               </View>
             </View>
           </View>
         </View>
+
         <View style={styles.blurredCategories}>
           <View style={styles.categoryRow}>
             <View style={styles.categoryColumn}>
               <Text style={styles.categoryTitleSmall}>{translations[language].energy || 'Energy Level'}</Text>
               <View style={styles.blurredScoreContainer}>
                 <View style={styles.blurredScore}>
-                  <View style={styles.blurredContent} />
+                  <Text style={styles.hiddenScoreText}>{petAnalysis.energy + 30}%</Text>
                   <View style={styles.fakeBlurOverlay} />
                 </View>
               </View>
               <View style={styles.scoreProgressBar}>
-                <View style={[styles.scoreProgress, { width: '81%' }]} />
+                <View style={[styles.scoreProgress, { width: `${petAnalysis.energy + 30}%`, backgroundColor: '#FF6B6B' }]} />
               </View>
             </View>
             <View style={styles.categoryColumn}>
-              <Text style={styles.categoryTitleSmall}>{translations[language].socialNeed || 'Social Need'}</Text>
+              <Text style={styles.categoryTitleSmall}>{translations[language].socialNeed || 'Social Compatibility'}</Text>
               <View style={styles.blurredScoreContainer}>
                 <View style={styles.blurredScore}>
-                  <View style={styles.blurredContent} />
+                  <Text style={styles.hiddenScoreText}>{petAnalysis.socialNeed + 25}%</Text>
                   <View style={styles.fakeBlurOverlay} />
                 </View>
               </View>
               <View style={styles.scoreProgressBar}>
-                <View style={[styles.scoreProgress, { width: '76%' }]} />
+                <View style={[styles.scoreProgress, { width: `${petAnalysis.socialNeed + 25}%`, backgroundColor: '#FF8E53' }]} />
               </View>
             </View>
           </View>
+
           <View style={styles.categoryRow}>
             <View style={styles.categoryColumn}>
-              <Text style={styles.categoryTitleSmall}>{translations[language].independence || 'Independence'}</Text>
+              <Text style={styles.categoryTitleSmall}>{translations[language].independence || 'Independence Match'}</Text>
               <View style={styles.blurredScoreContainer}>
                 <View style={styles.blurredScore}>
-                  <View style={styles.blurredContent} />
+                  <Text style={styles.hiddenScoreText}>{petAnalysis.independence + 20}%</Text>
                   <View style={styles.fakeBlurOverlay} />
                 </View>
               </View>
               <View style={styles.scoreProgressBar}>
-                <View style={[styles.scoreProgress, { width: '70%' }]} />
+                <View style={[styles.scoreProgress, { width: `${petAnalysis.independence + 20}%`, backgroundColor: '#45B7D1' }]} />
               </View>
             </View>
             <View style={styles.categoryColumn}>
-              <Text style={styles.categoryTitleSmall}>{translations[language].groomingNeed || 'Grooming Need'}</Text>
+              <Text style={styles.categoryTitleSmall}>{translations[language].groomingNeed || 'Care Compatibility'}</Text>
               <View style={styles.blurredScoreContainer}>
                 <View style={styles.blurredScore}>
-                  <View style={styles.blurredContent} />
+                  <Text style={styles.hiddenScoreText}>{petAnalysis.groomingNeed + 35}%</Text>
                   <View style={styles.fakeBlurOverlay} />
                 </View>
               </View>
               <View style={styles.scoreProgressBar}>
-                <View style={[styles.scoreProgress, { width: '88%' }]} />
+                <View style={[styles.scoreProgress, { width: `${petAnalysis.groomingNeed + 35}%`, backgroundColor: '#4ECDC4' }]} />
               </View>
             </View>
           </View>
         </View>
+
+        <View style={styles.lockOverlayContainer}>
+          <Text style={styles.lockOverlayIcon}>🔒</Text>
+          <Text style={styles.lockOverlayText}>{translations[language].unlockDetailedAnalysis || "Unlock your detailed analysis"}</Text>
+        </View>
+
+        <View style={styles.benefitsContainer}>
+          <Text style={styles.benefitsTitle}>{translations[language].whatYouGet || "With Pro+ You'll Unlock:"}</Text>
+          <View style={styles.benefitItem}>
+            <Text style={styles.benefitIcon}>✓</Text>
+            <Text style={styles.benefitText}>{translations[language].benefit1 || "Complete compatibility breakdown"}</Text>
+          </View>
+          <View style={styles.benefitItem}>
+            <Text style={styles.benefitIcon}>✓</Text>
+            <Text style={styles.benefitText}>{translations[language].benefit2 || "Personalized care recommendations"}</Text>
+          </View>
+          <View style={styles.benefitItem}>
+            <Text style={styles.benefitIcon}>✓</Text>
+            <Text style={styles.benefitText}>{translations[language].benefit3 || "Unlimited future analyses"}</Text>
+          </View>
+        </View>
+
         <View style={styles.actionsButtonContainer}>
           <TouchableOpacity
             style={styles.getProButton}
             onPress={() => setShowResultsPopup(true)}
           >
-            <Text style={styles.buttonText}>💪 Get Pro+</Text>
+            <Text style={styles.buttonText}>💪 {translations[language].getProButton || "Get Pro+ Now"}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.inviteFriendsButton}>
-            <Text style={styles.inviteFriendsButtonText}>Invite 3 Friends</Text>
+          <TouchableOpacity
+          style={styles.inviteFriendsButton}
+          onPress={() => {
+            // ÖNEMLİ: setState'i direkt çağırın, setTimeout YOK
+            setModalVisible(true); // showReferralModal yerine modalVisible kullanın
+          }}
+        >
+          <Text style={styles.inviteFriendsButtonText}>
+            {translations[language].inviteFriendsButton || "Invite 2 Friends to Unlock"}
+            </Text>
           </TouchableOpacity>
         </View>
+
+        <View style={styles.testimonialsContainer}>
+          <Text style={styles.testimonialsTitle}>{translations[language].whatUsersSay || "What our users discovered:"}</Text>
+          <View style={styles.testimonialCard}>
+            <Text style={styles.testimonialText}>
+              "{translations[language].testimonial1 || "The analysis was spot on! I found out my dog and I share the exact same energy level."}"
+            </Text>
+            <Text style={styles.testimonialAuthor}>- Sarah, 32</Text>
+          </View>
+          <View style={styles.testimonialCard}>
+            <Text style={styles.testimonialText}>
+              "{translations[language].testimonial2 || "I was considering the wrong breed! Thanks to this analysis I found my perfect match."}"
+            </Text>
+            <Text style={styles.testimonialAuthor}>- James, 28</Text>
+          </View>
+        </View>
+
         <View style={{ height: 60 }} />
       </ScrollView>
+    );
+  };
+
+  const CustomModal = () => {
+    if (!modalVisible) return null;
+    
+    return (
+      <View style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 9999,
+      }}>
+        <View style={{
+          width: '80%',
+          backgroundColor: '#1E2124',
+          borderRadius: 20,
+          padding: 20,
+          alignItems: 'center',
+        }}>
+          <Text style={{
+            color: 'white',
+            fontSize: 24,
+            fontWeight: 'bold',
+            marginBottom: 10,
+            textAlign: 'center',
+          }}>
+            {translations[language].shareInviteCode || "Share Your Invite Code"}
+          </Text>
+          
+          <Text style={{
+            color: 'white',
+            fontSize: 16,
+            marginBottom: 20,
+            textAlign: 'center',
+          }}>
+            {translations[language].inviteFriendsToUnlock || "Invite 3 friends to unlock results"}
+          </Text>
+          
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#2C2F33',
+            padding: 15,
+            borderRadius: 10,
+            marginBottom: 20,
+          }}>
+            <Text style={{
+              color: 'white',
+              fontSize: 24,
+              fontWeight: 'bold',
+              marginRight: 10,
+            }}>{referralCode}</Text>
+            
+            <TouchableOpacity
+              onPress={() => {
+                Clipboard.setString(referralCode);
+                Alert.alert(
+                  translations[language].copied || "Copied!",
+                  translations[language].codeCopied || "Referral code copied to clipboard"
+                );
+              }}
+            >
+              <Text style={{ fontSize: 24 }}>📋</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <TouchableOpacity
+            style={{
+              backgroundColor: '#6C63FF',
+              padding: 15,
+              borderRadius: 10,
+              width: '100%',
+              alignItems: 'center',
+              marginBottom: 10,
+            }}
+            onPress={() => {
+              Share.share({
+                message: `${translations[language].shareMessage || "Check out this app! Use my referral code to unlock your results:"} ${referralCode}`,
+              });
+            }}
+          >
+            <Text style={{
+              color: 'white',
+              fontSize: 18,
+              fontWeight: 'bold',
+            }}>
+              {translations[language].share || "Share"}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={{ padding: 10 }}
+            onPress={() => setModalVisible(false)}
+          >
+            <Text style={{
+              color: '#FF6B6B',
+              fontSize: 16,
+            }}>
+              {translations[language].close || "Close"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
   };
 
@@ -1540,10 +2065,10 @@ const CombinedAnalysisApp = () => {
       onSeeMoreDetails: handleSeeMoreDetails,
       compatibilityScore: compatibility?.score,
       details: compatibility?.details,
-      petImage, // İlk analiz için base64
-      faceImage, // İlk analiz için base64
-      petImageUrl: null, // İlk analizde kullanılmaz
-      faceImageUrl: null, // İlk analizde kullanılmaz
+      petImage,
+      faceImage,
+      petImageUrl: null,
+      faceImageUrl: null,
       petBreed: petResult?.predicted_label,
       translations,
       language,
@@ -1563,6 +2088,7 @@ const CombinedAnalysisApp = () => {
     optimizedFaceResult,
     petResult,
   ]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
@@ -1575,6 +2101,7 @@ const CombinedAnalysisApp = () => {
         <View style={styles.main}>
           {currentStep === 0 && renderIntroStep()}
           {currentStep === 1 && <GoogleSignIn onSignInSuccess={handleSignInSuccess} />}
+          {currentStep === 1.5 && renderReferralCodeEntryPage()}
           {currentStep === 2 && renderPetUploadStep()}
           {currentStep === 3 && renderFaceUploadStep()}
           {currentStep === 4 && renderQuestionsStep()}
@@ -1584,6 +2111,7 @@ const CombinedAnalysisApp = () => {
       </ScrollView>
       {currentStep !== 0 && <BannerAdComponent adUnitId={bannerAdUnitId} />}
       <ResultsPopup {...popupProps} />
+      <CustomModal/>
     </SafeAreaView>
   );
 };
@@ -1596,6 +2124,5 @@ const getScoreColor = (score) => {
   return '#2ECC71';
 };
 
-// app nesnesini dışa aktar
 export { app };
 export default CombinedAnalysisApp;

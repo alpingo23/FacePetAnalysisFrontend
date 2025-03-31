@@ -389,6 +389,9 @@ const ResultsPopup = ({
   };
 
   // Render the Pet Analysis Slide
+// Find the section in renderPetAnalysisSlide where the breed is displayed
+  // and modify it to show the percentage in parentheses
+
   const renderPetAnalysisSlide = (petAnalysis) => {
     console.log('[ResultsPopup] Rendering Pet Analysis Slide...');
     return (
@@ -412,7 +415,11 @@ const ResultsPopup = ({
 
         <View style={styles.analysisDetails}>
           <Text style={styles.analysisLabel}>
-            {translations[language].breedLabel || 'Breed'}: <Text style={styles.analysisValue}>{petAnalysis.breed}</Text>
+            {translations[language].breedLabel || 'Breed'}: 
+            <Text style={styles.analysisValue}>
+              {petAnalysis.breed} 
+              {petResult && petResult.confidence && ` (${(petResult.confidence * 100).toFixed(1)}%)`}
+            </Text>
           </Text>
           <Text style={styles.analysisLabel}>
             {translations[language].energy || 'Energy Level'}: <Text style={styles.analysisValue}>{petAnalysis.energy}</Text>
