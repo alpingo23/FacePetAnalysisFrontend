@@ -39,18 +39,21 @@ const PreviousResults = ({
   language,
   currentPetImage,
   currentFaceImage,
+  isProUnlocked,
+  referralCount,
+  setCurrentStep,
+  setShowResultsPopup,
+  setSelectedPreviousResult,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [showResultsPopup, setShowResultsPopup] = useState(false);
+  const [localShowResultsPopup, setLocalShowResultsPopup] = useState(false);
   const [selectedResult, setSelectedResult] = useState(null);
-  
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
-  
+
   useEffect(() => {
     const updateLayout = () => {
       setScreenWidth(Dimensions.get('window').width);
     };
-    
     Dimensions.addEventListener('change', updateLayout);
     return () => {
       if (Dimensions.removeEventListener) {
@@ -68,9 +71,24 @@ const PreviousResults = ({
   const sortedResults = [...results].sort((a, b) => b.timestamp - a.timestamp);
 
   const handleSeeMyResults = (result) => {
-    console.log('[PreviousResults] Selected result for ResultsPopup:', JSON.stringify(result, null, 2)); // Hata ayıklama
+    console.log('[PreviousResults] Selected result for ResultsPopup:', JSON.stringify(result, null, 2));
     setSelectedResult(result);
-    setShowResultsPopup(true);
+    const isPro = isProUnlocked || (referralCount >= 2);
+    if (isPro) {
+      if (setSelectedPreviousResult && setShowResultsPopup) {
+        setSelectedPreviousResult(result);
+        setShowResultsPopup(true);
+        setModalVisible(false);
+      } else {
+        setLocalShowResultsPopup(true);
+      }
+    } else {
+      if (setSelectedPreviousResult && setCurrentStep) {
+        setSelectedPreviousResult(result);
+        setCurrentStep(6);
+      }
+      setModalVisible(false);
+    }
   };
 
   const formatDateTime = (timestamp) => {
@@ -80,7 +98,6 @@ const PreviousResults = ({
     const year = date.getFullYear();
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
-    
     if (language === 'tr') {
       return `${day}.${month}.${year} · ${hours}:${minutes}`;
     } else {
@@ -93,6 +110,8 @@ const PreviousResults = ({
     if (score >= 50) return COLORS.warning;
     return COLORS.error;
   };
+
+  const isPro = isProUnlocked || (referralCount >= 2);
 
   return (
     <View style={styles.container}>
@@ -121,7 +140,7 @@ const PreviousResults = ({
                 </Text>
                 <View style={styles.headerUnderline} />
               </View>
-              
+
               {sortedResults.length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyText}>
@@ -129,7 +148,7 @@ const PreviousResults = ({
                   </Text>
                 </View>
               ) : (
-                <ScrollView 
+                <ScrollView
                   style={styles.resultsList}
                   contentContainerStyle={styles.resultsListContent}
                   showsVerticalScrollIndicator={false}
@@ -141,13 +160,16 @@ const PreviousResults = ({
                           {formatDateTime(result.timestamp)}
                         </Text>
                       </View>
-                      
+
                       <View style={styles.imageContainer}>
                         <View style={styles.imageWrapper}>
                           {result.faceImageUrl ? (
                             <Image
                               source={{ uri: result.faceImageUrl }}
-                              style={styles.resultImage}
+                              style={[
+                                styles.resultImage,
+                                !isPro && styles.blurredImage
+                              ]}
                               resizeMode="cover"
                             />
                           ) : (
@@ -156,18 +178,21 @@ const PreviousResults = ({
                             </View>
                           )}
                         </View>
-                        
+
                         <View style={styles.connectionContainer}>
                           <View style={styles.connectionLine} />
                           <View style={styles.connectionDot} />
                           <View style={styles.connectionLine} />
                         </View>
-                        
+
                         <View style={styles.imageWrapper}>
                           {result.petImageUrl ? (
                             <Image
                               source={{ uri: result.petImageUrl }}
-                              style={styles.resultImage}
+                              style={[
+                                styles.resultImage,
+                                !isPro && styles.blurredImage
+                              ]}
                               resizeMode="cover"
                             />
                           ) : (
@@ -177,7 +202,7 @@ const PreviousResults = ({
                           )}
                         </View>
                       </View>
-                      
+
                       <View style={styles.resultDetails}>
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>
@@ -187,40 +212,54 @@ const PreviousResults = ({
                             {formatBreedName(result.petBreed)}
                           </Text>
                         </View>
-                        
+
                         <View style={styles.detailRow}>
                           <Text style={styles.detailLabel}>
                             {translations[language]?.score || 'Score'}:
                           </Text>
                           <View style={styles.scoreContainer}>
                             <View style={[
-                              styles.scoreIndicator, 
+                              styles.scoreIndicator,
                               { backgroundColor: getScoreColor(result.compatibilityScore) }
                             ]} />
-                            <Text style={[
-                              styles.compatibilityText,
-                              { color: getScoreColor(result.compatibilityScore) }
-                            ]}>
-                              {result.compatibilityScore}%
-                            </Text>
+                            {isPro ? (
+                              <Text style={[
+                                styles.compatibilityText,
+                                { color: getScoreColor(result.compatibilityScore) }
+                              ]}>
+                                {result.compatibilityScore}%
+                              </Text>
+                            ) : (
+                              <View style={styles.blurredScoreContainer}>
+                                <Text style={styles.hiddenScoreText}>
+                                  {result.compatibilityScore}%
+                                </Text>
+                                <View style={styles.fakeBlurOverlay} />
+                              </View>
+                            )}
                           </View>
                         </View>
                       </View>
-                      
+
                       <TouchableOpacity
-                        style={styles.seeResultButton}
+                        style={[
+                          styles.seeResultButton,
+                          !isPro && styles.upgradeButton
+                        ]}
                         onPress={() => handleSeeMyResults(result)}
                         activeOpacity={0.7}
                       >
                         <Text style={styles.seeResultText}>
-                          {translations[language]?.seeMyResults || 'See My Results'}
+                          {!isPro
+                            ? (translations[language]?.upgradeToSee || 'Upgrade to See Results')
+                            : (translations[language]?.seeMyResults || 'See My Results')}
                         </Text>
                       </TouchableOpacity>
                     </View>
                   ))}
                 </ScrollView>
               )}
-              
+
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => setModalVisible(false)}
@@ -237,10 +276,10 @@ const PreviousResults = ({
 
       {selectedResult && (
         <ResultsPopup
-          visible={showResultsPopup}
-          onClose={() => setShowResultsPopup(false)}
+          visible={localShowResultsPopup}
+          onClose={() => setLocalShowResultsPopup(false)}
           compatibilityScore={selectedResult.compatibilityScore}
-          details={selectedResult.details || []} // Compatibility detayları
+          details={selectedResult.details || []}
           petImage={currentPetImage}
           faceImage={currentFaceImage}
           petImageUrl={selectedResult.petImageUrl}
@@ -257,7 +296,7 @@ const PreviousResults = ({
   );
 };
 
-// Stiller (değişmedi, aynı kalıyor)
+// Stiller
 const styles = StyleSheet.create({
   container: {
     width: '100%',
@@ -399,6 +438,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  blurredImage: {
+    opacity: 0.5,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
   placeholderImage: {
     width: '100%',
     height: '100%',
@@ -447,6 +490,33 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  blurredScoreContainer: {
+    position: 'relative',
+    width: 50,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hiddenScoreText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    opacity: 0, // Metni görünmez yap ama yer kaplasın
+  },
+  fakeBlurOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 4,
+    // Blur efekti için ek stil
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+  },
   seeResultButton: {
     backgroundColor: COLORS.secondary,
     paddingVertical: 10,
@@ -455,6 +525,9 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     minWidth: scale(150),
     alignItems: 'center',
+  },
+  upgradeButton: {
+    backgroundColor: COLORS.primary,
   },
   seeResultText: {
     color: COLORS.text,

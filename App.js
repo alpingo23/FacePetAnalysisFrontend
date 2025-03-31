@@ -180,6 +180,8 @@ const CombinedAnalysisApp = () => {
 
   const animationTimer = useRef(null);
   const blinkInterval = useRef(null);
+  const [selectedPreviousResult, setSelectedPreviousResult] = useState(null);
+
 
   // Get styles with fixed dark theme
   const styles = getStyles(COLORS, SHADOWS);
@@ -460,6 +462,8 @@ const CombinedAnalysisApp = () => {
 
   const handleClosePopup = () => {
     setShowResultsPopup(false);
+    setSelectedPreviousResult(null); // Seçilen önceki sonucu temizle
+
     setCurrentStep(2);
   };
 
@@ -1428,11 +1432,16 @@ const CombinedAnalysisApp = () => {
         </TouchableOpacity>
       )}
       <PreviousResults
-        results={previousResults}
-        translations={translations}
-        language={language}
-        currentPetImage={petImage}
-        currentFaceImage={faceImage}
+         results={previousResults}
+         translations={translations}
+         language={language}
+         currentPetImage={petImage}
+         currentFaceImage={faceImage}
+         isProUnlocked={isProUnlocked} // Pro durumunu ilet
+         referralCount={referralCount} // Referral sayısını ilet
+         setCurrentStep={setCurrentStep} // renderResultsStep'e yönlendirmek için
+         setShowResultsPopup={setShowResultsPopup} // Popup gösterme kontrolü
+         setSelectedPreviousResult={setSelectedPreviousResult} // Seçilen sonucu iletmek için
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -1656,31 +1665,40 @@ const CombinedAnalysisApp = () => {
   );
 
   const renderResultsStep = () => {
-    const formattedDetails = compatibility?.details
-      ? compatibility.details.map((detail) => ({
+    // Eğer bir önceki sonuç seçilmişse onu kullan, yoksa mevcut analiz verilerini kullan
+    const displayPetImage = selectedPreviousResult ? selectedPreviousResult.petImageUrl : petImage;
+    const displayFaceImage = selectedPreviousResult ? selectedPreviousResult.faceImageUrl : faceImage;
+    const displayPetBreed = selectedPreviousResult ? selectedPreviousResult.petBreed : petResult?.predicted_label;
+    const displayCompatibilityScore = selectedPreviousResult ? selectedPreviousResult.compatibilityScore : compatibility?.score;
+    const displayDetails = selectedPreviousResult ? selectedPreviousResult.details : compatibility?.details;
+    const displayFaceResult = selectedPreviousResult ? selectedPreviousResult.faceResult : faceResult;
+    const displayPetResult = selectedPreviousResult ? selectedPreviousResult.petResult : petResult;
+  
+    const formattedDetails = displayDetails
+      ? displayDetails.map((detail) => ({
           title: detail.title[language]?.replace(' Compatibility', '') || detail.title,
           score: detail.score,
         }))
       : [];
-
-    const faceAnalysis = faceResult && faceResult[0]
+  
+    const faceAnalysis = displayFaceResult && displayFaceResult[0]
       ? {
-          age: faceResult[0].age || 30,
-          expressions: faceResult[0].expressions && typeof faceResult[0].expressions === 'object'
-            ? faceResult[0].expressions
+          age: displayFaceResult[0].age || 30,
+          expressions: displayFaceResult[0].expressions && typeof displayFaceResult[0].expressions === 'object'
+            ? displayFaceResult[0].expressions
             : { happy: 0, sad: 0, angry: 0, fearful: 0, disgusted: 0, surprised: 0, neutral: 0 },
         }
       : {
           age: 30,
           expressions: { happy: 0, sad: 0, angry: 0, fearful: 0, disgusted: 0, surprised: 0, neutral: 0 },
         };
-
-    const petAnalysis = petResult
+  
+    const petAnalysis = displayPetResult
       ? {
-          energy: petResult.energy || 50,
-          socialNeed: petResult.socialNeed || 50,
-          independence: petResult.independence || 50,
-          groomingNeed: petResult.groomingNeed || 50,
+          energy: displayPetResult.energy || 50,
+          socialNeed: displayPetResult.socialNeed || 50,
+          independence: displayPetResult.independence || 50,
+          groomingNeed: displayPetResult.groomingNeed || 50,
         }
       : {
           energy: 50,
@@ -1688,22 +1706,22 @@ const CombinedAnalysisApp = () => {
           independence: 50,
           groomingNeed: 50,
         };
-
+  
     const energyAndHappiness = Math.min(85 + (faceAnalysis.expressions.happy * 15), 96);
     const emotionAndExpression = Math.min(78 + (Object.values(faceAnalysis.expressions).reduce((sum, value) => sum + value, 0) * 2), 95);
     const environment = userQuestions.hoursAtHome === 'more_than_8' ? 88 : 79;
-    const compatibilityScore = compatibility?.score || Math.floor(Math.random() * 11) + 85;
-
+    const compatibilityScore = displayCompatibilityScore || Math.floor(Math.random() * 11) + 85;
+  
     const randomTeaserInsights = [
       translations[language].teaserInsight1 || "We found a surprising energy match!",
       translations[language].teaserInsight2 || "Your expressions reveal a special connection",
       translations[language].teaserInsight3 || "You might need to adjust one key habit",
       translations[language].teaserInsight4 || "There's an unexpected personality alignment",
     ];
-
+  
     const shuffledInsights = [...randomTeaserInsights].sort(() => 0.5 - Math.random());
     const selectedInsights = shuffledInsights.slice(0, 2);
-
+  
     return (
       <ScrollView
         style={[styles.scrollView, { backgroundColor: '#000' }]}
@@ -1720,33 +1738,33 @@ const CombinedAnalysisApp = () => {
             </View>
           </View>
         </View>
-
+  
         <View style={styles.imagesComparisonContainer}>
           <View style={styles.imageWithLabel}>
-            {faceImage ? (
-              <Image source={{ uri: faceImage }} style={styles.circularProfileImage} resizeMode="cover" />
+            {displayFaceImage ? (
+              <Image source={{ uri: displayFaceImage }} style={styles.circularProfileImage} resizeMode="cover" />
             ) : (
               <View style={styles.circularProfileImage} />
             )}
             <Text style={styles.imageLabel}>{translations[language].you || 'You'}</Text>
           </View>
-
+  
           <View style={styles.heartContainer}>
             <Text style={styles.heartIcon}>❤️</Text>
           </View>
-
+  
           <View style={styles.imageWithLabel}>
-            {petImage ? (
-              <Image source={{ uri: petImage }} style={styles.circularProfileImage} resizeMode="cover" />
+            {displayPetImage ? (
+              <Image source={{ uri: displayPetImage }} style={styles.circularProfileImage} resizeMode="cover" />
             ) : (
               <View style={styles.circularProfileImage} />
             )}
             <Text style={styles.imageLabel} numberOfLines={1}>
-              {formatBreedName(petResult?.predicted_label || '')}
+              {formatBreedName(displayPetBreed || '')}
             </Text>
           </View>
         </View>
-
+  
         <View style={styles.insightsContainer}>
           <Text style={styles.insightsTitle}>{translations[language].keyInsightsTitle || "Key Insights Discovered:"}</Text>
           {selectedInsights.map((insight, index) => (
@@ -1760,9 +1778,9 @@ const CombinedAnalysisApp = () => {
             <Text style={styles.lockedInsightText}>{translations[language].lockedInsight || "3 more insights locked"}</Text>
           </View>
         </View>
-
+  
         <Text style={styles.analysisTitle}>{translations[language].fullAnalysisTitle || "Your Complete Compatibility Analysis"}</Text>
-
+  
         <View style={styles.blurredCategories}>
           <View style={styles.categoryRow}>
             <View style={styles.categoryColumn}>
@@ -1790,7 +1808,7 @@ const CombinedAnalysisApp = () => {
               </View>
             </View>
           </View>
-
+  
           <View style={styles.categoryRow}>
             <View style={styles.categoryColumn}>
               <Text style={styles.categoryTitleSmall}>{translations[language].emotionAndExpression || 'Emotional Bond'}</Text>
@@ -1818,7 +1836,7 @@ const CombinedAnalysisApp = () => {
             </View>
           </View>
         </View>
-
+  
         <View style={styles.blurredCategories}>
           <View style={styles.categoryRow}>
             <View style={styles.categoryColumn}>
@@ -1846,7 +1864,7 @@ const CombinedAnalysisApp = () => {
               </View>
             </View>
           </View>
-
+  
           <View style={styles.categoryRow}>
             <View style={styles.categoryColumn}>
               <Text style={styles.categoryTitleSmall}>{translations[language].independence || 'Independence Match'}</Text>
@@ -1874,12 +1892,12 @@ const CombinedAnalysisApp = () => {
             </View>
           </View>
         </View>
-
+  
         <View style={styles.lockOverlayContainer}>
           <Text style={styles.lockOverlayIcon}>🔒</Text>
           <Text style={styles.lockOverlayText}>{translations[language].unlockDetailedAnalysis || "Unlock your detailed analysis"}</Text>
         </View>
-
+  
         <View style={styles.benefitsContainer}>
           <Text style={styles.benefitsTitle}>{translations[language].whatYouGet || "With Pro+ You'll Unlock:"}</Text>
           <View style={styles.benefitItem}>
@@ -1895,7 +1913,7 @@ const CombinedAnalysisApp = () => {
             <Text style={styles.benefitText}>{translations[language].benefit3 || "Unlimited future analyses"}</Text>
           </View>
         </View>
-
+  
         <View style={styles.actionsButtonContainer}>
           <TouchableOpacity
             style={styles.getProButton}
@@ -1904,18 +1922,17 @@ const CombinedAnalysisApp = () => {
             <Text style={styles.buttonText}>💪 {translations[language].getProButton || "Get Pro+ Now"}</Text>
           </TouchableOpacity>
           <TouchableOpacity
-          style={styles.inviteFriendsButton}
-          onPress={() => {
-            // ÖNEMLİ: setState'i direkt çağırın, setTimeout YOK
-            setModalVisible(true); // showReferralModal yerine modalVisible kullanın
-          }}
-        >
-          <Text style={styles.inviteFriendsButtonText}>
-            {translations[language].inviteFriendsButton || "Invite 2 Friends to Unlock"}
+            style={styles.inviteFriendsButton}
+            onPress={() => {
+              setModalVisible(true); // Referral modalını aç
+            }}
+          >
+            <Text style={styles.inviteFriendsButtonText}>
+              {translations[language].inviteFriendsButton || "Invite 2 Friends to Unlock"}
             </Text>
           </TouchableOpacity>
         </View>
-
+  
         <View style={styles.testimonialsContainer}>
           <Text style={styles.testimonialsTitle}>{translations[language].whatUsersSay || "What our users discovered:"}</Text>
           <View style={styles.testimonialCard}>
@@ -1931,7 +1948,7 @@ const CombinedAnalysisApp = () => {
             <Text style={styles.testimonialAuthor}>- James, 28</Text>
           </View>
         </View>
-
+  
         <View style={{ height: 60 }} />
       </ScrollView>
     );
@@ -2063,18 +2080,18 @@ const CombinedAnalysisApp = () => {
       visible: showResultsPopup,
       onClose: handleClosePopup,
       onSeeMoreDetails: handleSeeMoreDetails,
-      compatibilityScore: compatibility?.score,
-      details: compatibility?.details,
+      compatibilityScore: selectedPreviousResult ? selectedPreviousResult.compatibilityScore : compatibility?.score,
+      details: selectedPreviousResult ? selectedPreviousResult.details : compatibility?.details,
       petImage,
       faceImage,
-      petImageUrl: null,
-      faceImageUrl: null,
-      petBreed: petResult?.predicted_label,
+      petImageUrl: selectedPreviousResult ? selectedPreviousResult.petImageUrl : null,
+      faceImageUrl: selectedPreviousResult ? selectedPreviousResult.faceImageUrl : null,
+      petBreed: selectedPreviousResult ? selectedPreviousResult.petBreed : petResult?.predicted_label,
       translations,
       language,
-      userQuestions,
-      faceResult: optimizedFaceResult,
-      petResult,
+      userQuestions: selectedPreviousResult ? selectedPreviousResult.userQuestions : userQuestions,
+      faceResult: selectedPreviousResult ? selectedPreviousResult.faceResult : optimizedFaceResult,
+      petResult: selectedPreviousResult ? selectedPreviousResult.petResult : petResult,
     };
   }, [
     showResultsPopup,
@@ -2087,8 +2104,8 @@ const CombinedAnalysisApp = () => {
     userQuestions,
     optimizedFaceResult,
     petResult,
+    selectedPreviousResult, // Bağımlılık listesine ekleyin
   ]);
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
