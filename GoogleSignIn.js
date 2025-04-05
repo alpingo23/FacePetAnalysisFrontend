@@ -10,7 +10,10 @@ import {
   Image,
   SafeAreaView,
   Dimensions,
-  ScrollView,
+  Platform,
+  StatusBar,
+  ImageBackground,
+  Linking,
 } from 'react-native';
 import {
   GoogleSignin,
@@ -34,7 +37,7 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
   useEffect(() => {
     log('Configuring Google Sign-In...');
     GoogleSignin.configure({
-      webClientId: Config.GOOGLE_WEB_CLIENT_ID, // .env dosyasından alınır
+      webClientId: Config.GOOGLE_WEB_CLIENT_ID,
       offlineAccess: true,
       scopes: ['profile', 'email'],
       forceCodeForRefreshToken: true,
@@ -46,7 +49,7 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
   const checkCurrentUser = async () => {
     try {
       log('Checking for existing user with signInSilently...');
-      await GoogleSignin.hasPlayServices();
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       const userInfo = await GoogleSignin.signInSilently();
       log('User already signed in', userInfo);
 
@@ -67,15 +70,10 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
       const firebaseUserCredential = await auth().signInWithCredential(googleCredential);
       log('Firebase sign-in successful', firebaseUserCredential.user.toJSON());
 
-      const firebaseUserId = firebaseUserCredential.user.uid; // Firebase UID
-      onSignInSuccess({ ...userInfo, userId: firebaseUserId }); // Firebase UID ile gönder
+      const firebaseUserId = firebaseUserCredential.user.uid;
+      onSignInSuccess({ ...userInfo, userId: firebaseUserId });
     } catch (error) {
       log('Check current user error', { error: error.message, code: error.code });
-      if (error.code === statusCodes.SIGN_IN_REQUIRED) {
-        log('No user is currently signed in');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        log('Play Services not available');
-      }
     }
   };
 
@@ -83,7 +81,8 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
     setIsLoading(true);
     try {
       log('Starting Google Sign-In...');
-      await GoogleSignin.hasPlayServices();
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      await GoogleSignin.signOut();
       const userInfo = await GoogleSignin.signIn();
       log('Google Sign-In successful', userInfo);
 
@@ -104,114 +103,175 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
       const firebaseUserCredential = await auth().signInWithCredential(googleCredential);
       log('Firebase sign-in successful', firebaseUserCredential.user.toJSON());
 
-      const firebaseUserId = firebaseUserCredential.user.uid; // Firebase UID
-      onSignInSuccess({ ...userInfo, userId: firebaseUserId }); // Firebase UID ile gönder
+      const firebaseUserId = firebaseUserCredential.user.uid;
+      onSignInSuccess({ ...userInfo, userId: firebaseUserId });
     } catch (error) {
       log('Sign-in error', { error: error.message, code: error.code });
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        Alert.alert('Sign-in cancelled');
+        // Kullanıcı iptal etti, sessizce devam et
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        Alert.alert('Sign-in in progress');
+        Alert.alert('Please wait', 'Sign-in process is already in progress');
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert('Play Services not available');
+        Alert.alert('Google Play Services Required', 'Please install Google Play Services to continue');
       } else {
-        Alert.alert('Sign-in error', error.message);
+        Alert.alert('Sign-in Failed', 'Could not sign in. Please try again later.');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Stil tanımları aynı kalabilir, değişiklik yok
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      justifyContent: 'flex-start',
-      alignItems: 'center',
       backgroundColor: '#000000',
-      paddingTop: height * 0.08,
+    },
+    backgroundImage: {
+      flex: 1,
+      justifyContent: 'space-between',
+    },
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      flex: 1,
+      justifyContent: 'space-between',
+      paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    },
+    contentContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
       paddingHorizontal: width * 0.06,
     },
-    scrollContent: {
-      flexGrow: 1,
-      width: '100%',
+    logoContainer: {
       alignItems: 'center',
+      marginBottom: height * 0.04,
+    },
+    logo: {
+      width: width * 0.25,
+      height: width * 0.25,
+      marginBottom: 15,
+      borderRadius: width * 0.125,
+      borderWidth: 3,
+      borderColor: 'rgba(108, 99, 255, 0.6)',
+      overflow: 'hidden',
+    },
+    appName: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: '#fff',
+      marginBottom: 8,
+      fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-medium',
     },
     headingContainer: {
       width: '100%',
-      marginBottom: height * 0.05,
+      marginBottom: height * 0.03,
       alignItems: 'center',
     },
     title: {
-      fontSize: Math.min(width * 0.09, 35),
+      fontSize: Math.min(width * 0.07, 28),
       color: '#FFFFFF',
-      fontWeight: '700',
-      letterSpacing: 0.2,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
       marginBottom: height * 0.015,
       textAlign: 'center',
+      fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-medium',
     },
     subtitle: {
       fontSize: Math.min(width * 0.04, 16),
-      color: '#9E9E9E',
+      color: '#DDDDDD',
       lineHeight: Math.min(width * 0.055, 22),
       textAlign: 'center',
-      marginBottom: height * 0.04,
+      marginBottom: height * 0.03,
+      fontFamily: Platform.OS === 'ios' ? 'Avenir' : 'sans-serif',
+      paddingHorizontal: 20,
     },
-    infoContainer: {
+    featureCard: {
       width: '100%',
-      marginBottom: height * 0.06,
-      backgroundColor: 'rgba(108, 99, 255, 0.1)',
-      borderRadius: 12,
+      backgroundColor: 'rgba(108, 99, 255, 0.15)',
+      borderRadius: 20,
       padding: width * 0.05,
+      marginBottom: height * 0.04,
       borderWidth: 1,
       borderColor: 'rgba(108, 99, 255, 0.3)',
     },
-    infoText: {
-      fontSize: Math.min(width * 0.038, 15),
-      color: '#CCCCCC',
-      lineHeight: Math.min(width * 0.055, 22),
-      textAlign: 'center',
+    featureTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      marginBottom: 10,
+      fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-medium',
+    },
+    featureList: {
+      marginBottom: 10,
+    },
+    featureItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 10,
+    },
+    featureBullet: {
+      fontSize: 18,
+      color: '#6C63FF',
+      marginRight: 10,
+      marginTop: -5,
+    },
+    featureText: {
+      fontSize: 14,
+      color: '#DDDDDD',
+      flex: 1,
+      lineHeight: 20,
+      fontFamily: Platform.OS === 'ios' ? 'Avenir' : 'sans-serif',
+    },
+    buttonContainer: {
+      width: '100%',
+      paddingBottom: height * 0.05,
+      paddingHorizontal: width * 0.06,
     },
     googleButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'flex-start',
+      justifyContent: 'center',
       backgroundColor: '#FFFFFF',
       width: '100%',
-      height: height * 0.07,
-      borderRadius: 999,
-      paddingHorizontal: width * 0.05,
+      height: 56,
+      borderRadius: 30,
+      paddingHorizontal: 15,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 4,
-      marginBottom: height * 0.02,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 5,
+      marginBottom: 15,
     },
     googleIconContainer: {
-      width: width * 0.06,
-      height: width * 0.06,
-      marginRight: width * 0.06,
+      width: 24,
+      height: 24,
+      marginRight: 12,
       justifyContent: 'center',
       alignItems: 'center',
     },
+    googleIcon: {
+      width: 24,
+      height: 24,
+    },
     buttonText: {
       color: '#000000',
-      fontSize: Math.min(width * 0.04, 16),
-      fontWeight: '500',
-      flex: 1,
+      fontSize: 16,
+      fontWeight: 'bold',
+      fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-medium',
     },
     loadingContainer: {
       position: 'absolute',
-      right: width * 0.05,
+      right: 20,
     },
     termsText: {
-      fontSize: Math.min(width * 0.03, 12),
-      color: '#808080',
+      fontSize: 12,
+      color: '#AAAAAA',
       textAlign: 'center',
-      marginTop: height * 0.02,
-      lineHeight: Math.min(width * 0.045, 18),
-      paddingHorizontal: width * 0.05,
+      marginTop: 15,
+      lineHeight: 18,
+      fontFamily: Platform.OS === 'ios' ? 'Avenir' : 'sans-serif',
+      paddingHorizontal: 15,
     },
     highlight: {
       color: '#6C63FF',
@@ -220,45 +280,84 @@ const GoogleSignIn = ({ onSignInSuccess }) => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.headingContainer}>
-          <Text style={styles.title}>Create your account</Text>
-        </View>
-
-        <View style={styles.infoContainer}>
-          <Text style={styles.infoText}>
-            Our AI-powered app analyzes your facial features and your pet's characteristics to reveal surprising connections and compatibility insights.
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.googleButton}
-          onPress={signIn}
-          disabled={isLoading}
-          activeOpacity={0.8}
-        >
-          <View style={styles.googleIconContainer}>
-            <Image
-              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }}
-              style={{ width: width * 0.06, height: width * 0.06 }}
-              resizeMode="contain"
-            />
-          </View>
-          <Text style={styles.buttonText}>Sign in with Google</Text>
-          {isLoading && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#4285F4" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <ImageBackground
+        source={require('./assets/background.jpg')}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      >
+        <View style={styles.overlay}>
+          <View style={styles.contentContainer}>
+            <View style={styles.logoContainer}>
+              <Image 
+                source={require('./assets/logo.png')} 
+                style={styles.logo}
+                resizeMode="cover"
+              />
+              <Text style={styles.appName}>Face Pet AI</Text>
             </View>
-          )}
-        </TouchableOpacity>
 
-        <Text style={styles.termsText}>
-          By continuing, you agree to our Terms of Service and Privacy Policy.
-          Your data is secure and will only be used to provide the Face Pet Match experience.
-        </Text>
-      </ScrollView>
-    </SafeAreaView>
+            <View style={styles.headingContainer}>
+              <Text style={styles.title}>Discover Your Connection</Text>
+              <Text style={styles.subtitle}>
+                Our AI analyzes you and your pet to reveal your special bond and compatibility
+              </Text>
+            </View>
+
+            <View style={styles.featureCard}>
+              <View style={styles.featureList}>
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureBullet}>•</Text>
+                  <Text style={styles.featureText}>Face analysis to understand your personality traits</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureBullet}>•</Text>
+                  <Text style={styles.featureText}>Pet breed identification and temperament analysis</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <Text style={styles.featureBullet}>•</Text>
+                  <Text style={styles.featureText}>Discover how well you match with your pet companion</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={signIn}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              <View style={styles.googleIconContainer}>
+                <Image
+                  source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }}
+                  style={styles.googleIcon}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text style={styles.buttonText}>Continue with Google</Text>
+              {isLoading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#4285F4" />
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.termsText}>
+              By continuing, you agree to our <Text style={styles.highlight}>Terms of Service</Text> and{' '}
+              <Text 
+                style={styles.highlight}
+                onPress={() => Linking.openURL('https://alpingo23.github.io/facepetmatch-privacy/')}
+              >
+                Privacy Policy
+              </Text>
+            </Text>
+          </View>
+        </View>
+      </ImageBackground>
+    </View>
   );
 };
 

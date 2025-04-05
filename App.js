@@ -22,7 +22,6 @@ import {
   TextInput,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import translations from './translations.json';
 import CustomLanguageSelector from './CustomLanguageSelector';
@@ -36,6 +35,7 @@ import mobileAds from 'react-native-google-mobile-ads';
 import BannerAdComponent from './BannerAdComponent.js';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import GoogleSignIn from './GoogleSignIn';
+import ImagePicker from 'react-native-image-crop-picker';
 import IntroScreens from './IntroScreens';
 import PreviousResults from './PreviousResults';
 import { initializeApp } from '@react-native-firebase/app';
@@ -551,58 +551,7 @@ const CombinedAnalysisApp = () => {
     return breedPart.charAt(0).toUpperCase() + breedPart.slice(1).toLowerCase().replace(/_/g, ' ');
   };
 
-  const requestGalleryPermission = async () => {
-    try {
-      if (Platform.OS === 'android') {
-        const permission = PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES;
-        const granted = await PermissionsAndroid.check(permission);
-        if (granted) return true;
 
-        const result = await PermissionsAndroid.request(permission, {
-          title: translations[language].galleryPermissionTitle,
-          message: translations[language].galleryPermissionMessage,
-          buttonPositive: translations[language].allowButton,
-          buttonNegative: translations[language].denyButton,
-        });
-
-        if (result === PermissionsAndroid.RESULTS.GRANTED) return true;
-        else {
-          Alert.alert(
-            translations[language].permissionDeniedTitle,
-            translations[language].permissionDeniedMessage,
-            [
-              { text: translations[language].goToSettingsButton, onPress: () => Linking.openSettings() },
-              { text: translations[language].cancelButton, style: 'cancel' },
-            ]
-          );
-          return false;
-        }
-      } else if (Platform.OS === 'ios') {
-        const permissionStatus = await check(PERMISSIONS.IOS.PHOTO_LIBRARY);
-        if (permissionStatus === RESULTS.GRANTED) return true;
-
-        if (permissionStatus === RESULTS.DENIED) {
-          const result = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
-          if (result === RESULTS.GRANTED) return true;
-        }
-
-        Alert.alert(
-          translations[language].permissionDeniedTitle,
-          translations[language].permissionDeniedMessage,
-          [
-            { text: translations[language].goToSettingsButton, onPress: () => Linking.openSettings() },
-            { text: translations[language].cancelButton, style: 'cancel' },
-          ]
-        );
-        return false;
-      }
-      return true;
-    } catch (err) {
-      console.error('Gallery permission error:', err);
-      setError(translations[language].galleryPermissionError + err.message);
-      return false;
-    }
-  };
 
   const requestCameraPermission = async () => {
     try {
@@ -658,115 +607,124 @@ const CombinedAnalysisApp = () => {
   };
 
   const handlePetUpload = async () => {
-    const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) return;
-
-    const options = { mediaType: 'photo', includeBase64: true };
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) return;
-      if (response.errorCode) {
-        setError(translations[language].imagePickerError + (response.errorMessage || 'Unknown error'));
-        return;
+    try {
+      const image = await ImagePicker.openPicker({
+        mediaType: 'photo',
+        includeBase64: true,
+        cropping: false, // İsteğe bağlı: Kırpma özelliğini devre dışı bıraktım, isterseniz true yapabilirsiniz
+      });
+  
+      setPetFile({
+        uri: image.path,
+        type: image.mime || 'image/jpeg',
+        name: image.filename || 'pet_image.jpg',
+        width: image.width,
+        height: image.height,
+      });
+  
+      const petImageData = image.data ? `data:image/jpeg;base64,${image.data}` : image.path;
+      setPetImage(petImageData);
+      setPetImageSize({ width: image.width, height: image.height });
+      setError(null);
+    } catch (error) {
+      if (error.message.includes('cancel')) {
+        return; // Kullanıcı seçimi iptal etti
       }
-      if (response.assets && response.assets.length > 0) {
-        const asset = response.assets[0];
-        setPetFile({
-          uri: asset.uri,
-          type: asset.type || 'image/jpeg',
-          name: asset.fileName || 'pet_image.jpg',
-          width: asset.width,
-          height: asset.height,
-        });
-        const petImageData = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
-        setPetImage(petImageData);
-        setPetImageSize({ width: asset.width, height: asset.height });
-        setError(null);
-      }
-    });
+      console.error('[ImagePicker] Error selecting pet image:', error);
+      setError(translations[language].imagePickerError + (error.message || 'Unknown error'));
+    }
   };
-
   const handleFaceUpload = async () => {
-    const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) return;
-
-    const options = { mediaType: 'photo', includeBase64: true };
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) return;
-      if (response.errorCode) {
-        setError(translations[language].imagePickerError + (response.errorMessage || 'Unknown error'));
-        return;
+    try {
+      const image = await ImagePicker.openPicker({
+        mediaType: 'photo',
+        includeBase64: true,
+        cropping: false, // İsteğe bağlı: Kırpma özelliğini devre dışı bıraktım, isterseniz true yapabilirsiniz
+      });
+  
+      setFaceFile({
+        uri: image.path,
+        type: image.mime || 'image/jpeg',
+        name: image.filename || 'face_image.jpg',
+        width: image.width,
+        height: image.height,
+      });
+  
+      const faceImageData = image.data ? `data:image/jpeg;base64,${image.data}` : image.path;
+      setFaceImage(faceImageData);
+      setFaceImageSize({ width: image.width, height: image.height });
+      setError(null);
+    } catch (error) {
+      if (error.message.includes('cancel')) {
+        return; // Kullanıcı seçimi iptal etti
       }
-      if (response.assets && response.assets.length > 0) {
-        const asset = response.assets[0];
-        setFaceFile({
-          uri: asset.uri,
-          type: asset.type || 'image/jpeg',
-          name: asset.fileName || 'face_image.jpg',
-          width: asset.width,
-          height: asset.height,
-        });
-        const faceImageData = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
-        setFaceImage(faceImageData);
-        setFaceImageSize({ width: asset.width, height: asset.height });
-        setError(null);
-      }
-    });
+      console.error('[ImagePicker] Error selecting face image:', error);
+      setError(translations[language].imagePickerError + (error.message || 'Unknown error'));
+    }
   };
 
   const handlePetCamera = async () => {
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) return;
-
-    const options = { mediaType: 'photo', includeBase64: true };
-    launchCamera(options, (response) => {
-      if (response.didCancel) return;
-      if (response.errorCode) {
-        setError(translations[language].cameraError + (response.errorMessage || 'Unknown error'));
-        return;
+  
+    try {
+      const image = await ImagePicker.openCamera({
+        mediaType: 'photo',
+        includeBase64: true,
+        cropping: false, // İsteğe bağlı: Kırpma özelliğini devre dışı bıraktım
+      });
+  
+      setPetFile({
+        uri: image.path,
+        type: image.mime || 'image/jpeg',
+        name: image.filename || 'pet_image.jpg',
+        width: image.width,
+        height: image.height,
+      });
+  
+      const petImageData = image.data ? `data:image/jpeg;base64,${image.data}` : image.path;
+      setPetImage(petImageData);
+      setPetImageSize({ width: image.width, height: image.height });
+      setError(null);
+    } catch (error) {
+      if (error.message.includes('cancel')) {
+        return; // Kullanıcı seçimi iptal etti
       }
-      if (response.assets && response.assets.length > 0) {
-        const asset = response.assets[0];
-        setPetFile({
-          uri: asset.uri,
-          type: asset.type || 'image/jpeg',
-          name: asset.fileName || 'pet_image.jpg',
-          width: asset.width,
-          height: asset.height,
-        });
-        const petImageData = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
-        setPetImage(petImageData);
-        setPetImageSize({ width: asset.width, height: asset.height });
-        setError(null);
-      }
-    });
+      console.error('[ImagePicker] Error capturing pet image:', error);
+      setError(translations[language].cameraError + (error.message || 'Unknown error'));
+    }
   };
 
   const handleFaceCamera = async () => {
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) return;
-
-    const options = { mediaType: 'photo', includeBase64: true };
-    launchCamera(options, (response) => {
-      if (response.didCancel) return;
-      if (response.errorCode) {
-        setError(translations[language].cameraError + (response.errorMessage || 'Unknown error'));
-        return;
+  
+    try {
+      const image = await ImagePicker.openCamera({
+        mediaType: 'photo',
+        includeBase64: true,
+        cropping: false, // İsteğe bağlı: Kırpma özelliğini devre dışı bıraktım
+      });
+  
+      setFaceFile({
+        uri: image.path,
+        type: image.mime || 'image/jpeg',
+        name: image.filename || 'face_image.jpg',
+        width: image.width,
+        height: image.height,
+      });
+  
+      const faceImageData = image.data ? `data:image/jpeg;base64,${image.data}` : image.path;
+      setFaceImage(faceImageData);
+      setFaceImageSize({ width: image.width, height: image.height });
+      setError(null);
+    } catch (error) {
+      if (error.message.includes('cancel')) {
+        return; // Kullanıcı seçimi iptal etti
       }
-      if (response.assets && response.assets.length > 0) {
-        const asset = response.assets[0];
-        setFaceFile({
-          uri: asset.uri,
-          type: asset.type || 'image/jpeg',
-          name: asset.fileName || 'face_image.jpg',
-          width: asset.width,
-          height: asset.height,
-        });
-        const faceImageData = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
-        setFaceImage(faceImageData);
-        setFaceImageSize({ width: asset.width, height: asset.height });
-        setError(null);
-      }
-    });
+      console.error('[ImagePicker] Error capturing face image:', error);
+      setError(translations[language].cameraError + (error.message || 'Unknown error'));
+    }
   };
 
   const analyzeFace = async () => {
@@ -1403,93 +1361,148 @@ const CombinedAnalysisApp = () => {
 
   const renderPetUploadStep = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>{translations[language].step1Title}</Text>
-      <View style={styles.uploadContainer}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            onPress={handlePetUpload}
-            style={[styles.actionButton, { backgroundColor: COLORS.primary }]}
-          >
-            <Text style={styles.actionButtonText}>{translations[language].uploadPetButton}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handlePetCamera}
-            style={[styles.actionButton, { backgroundColor: COLORS.teal }]}
-          >
-            <Text style={styles.actionButtonText}>{translations[language].takePetPictureButton}</Text>
-          </TouchableOpacity>
-        </View>
-        {petImage && (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: petImage }} style={[styles.image, { width: 180, height: 180 }]} resizeMode="contain" />
+      <View style={styles.uploadHeaderContainer}>
+        <Text style={styles.uploadTitle}>
+          {translations[language]?.uploadPetImage || 'Upload Your Pet Photo'}
+        </Text>
+        <Text style={styles.uploadSubtitle}>
+          {translations[language]?.uploadPetDesc || 'Choose a clear picture of your furry friend'}
+        </Text>
+      </View>
+      
+      <View style={styles.imagePreviewContainer}>
+        {petImage ? (
+          <Image source={{ uri: petImage }} style={styles.previewImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.placeholderContainer}>
+            <Text style={styles.placeholderEmoji}>🐶</Text>
+            <Text style={styles.placeholderText}>
+              {translations[language]?.petPlaceholder || 'Your pet image will appear here'}
+            </Text>
           </View>
         )}
       </View>
-      <Text style={styles.warningText}>{translations[language].petUploadWarning}</Text>
-      {petImage && (
-        <TouchableOpacity onPress={() => setCurrentStep(3)} style={styles.continueButton}>
-          <Text style={styles.buttonText}>{translations[language].continueToFaceUpload}</Text>
+      
+      <View style={styles.uploadButtonsContainer}>
+        <TouchableOpacity style={styles.uploadButton} onPress={handlePetUpload}>
+          <Text style={styles.uploadButtonText}>
+            {translations[language]?.gallery || 'Gallery'}
+          </Text>
         </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.uploadButton} onPress={handlePetCamera}>
+          <Text style={styles.uploadButtonText}>
+            {translations[language]?.camera || 'Camera'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      
+      <View style={[styles.navigationContainer, {justifyContent: 'center'}]}>
+        <TouchableOpacity 
+          style={[styles.navigationButton, styles.continueButton, !petImage && styles.disabledButton]} 
+          onPress={() => petImage && setCurrentStep(3)}
+          disabled={!petImage}
+        >
+          <Text style={styles.navigationButtonText}>
+            {translations[language]?.next || 'Next'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      
+      {previousResults.length > 0 && (
+        <View style={styles.previousResultsContainer}>
+          <PreviousResults
+            results={previousResults}
+            translations={translations}
+            language={language}
+            currentPetImage={null}
+            currentFaceImage={null}
+            isProUnlocked={isProUnlocked}
+            referralCount={referralCount}
+            setCurrentStep={setCurrentStep}
+            setShowResultsPopup={setShowResultsPopup}
+            setSelectedPreviousResult={setSelectedPreviousResult}
+          />
+        </View>
       )}
-      <PreviousResults
-         results={previousResults}
-         translations={translations}
-         language={language}
-         currentPetImage={petImage}
-         currentFaceImage={faceImage}
-         isProUnlocked={isProUnlocked} // Pro durumunu ilet
-         referralCount={referralCount} // Referral sayısını ilet
-         setCurrentStep={setCurrentStep} // renderResultsStep'e yönlendirmek için
-         setShowResultsPopup={setShowResultsPopup} // Popup gösterme kontrolü
-         setSelectedPreviousResult={setSelectedPreviousResult} // Seçilen sonucu iletmek için
-      />
-      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 
   const renderFaceUploadStep = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>{translations[language].step2Title}</Text>
-      <View style={styles.uploadContainer}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            onPress={handleFaceUpload}
-            style={[styles.actionButton, { backgroundColor: COLORS.primary }]}
-          >
-            <Text style={styles.actionButtonText}>{translations[language].uploadFaceButton}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleFaceCamera}
-            style={[styles.actionButton, { backgroundColor: COLORS.teal }]}
-          >
-            <Text style={styles.actionButtonText}>{translations[language].takeSelfieButton}</Text>
-          </TouchableOpacity>
-        </View>
-        {faceImage && (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: faceImage }} style={[styles.image, { width: 180, height: 180 }]} resizeMode="contain" />
+      <View style={styles.uploadHeaderContainer}>
+        <Text style={styles.uploadTitle}>
+          {translations[language]?.uploadFaceImage || 'Upload Your Face Photo'}
+        </Text>
+        <Text style={styles.uploadSubtitle}>
+          {translations[language]?.uploadFaceDesc || 'Choose a clear picture showing your face'}
+        </Text>
+      </View>
+      
+      <View style={styles.imagePreviewContainer}>
+        {faceImage ? (
+          <Image source={{ uri: faceImage }} style={styles.previewImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.placeholderContainer}>
+            <Text style={styles.placeholderEmoji}>😊</Text>
+            <Text style={styles.placeholderText}>
+              {translations[language]?.facePlaceholder || 'Your face image will appear here'}
+            </Text>
           </View>
         )}
       </View>
-      <Text style={styles.warningText}>{translations[language].faceUploadWarning}</Text>
-      <View style={styles.buttonRow}>
-        {faceImage && (
-          <TouchableOpacity onPress={startAnalysis} style={styles.continueButton}>
-            <Text style={styles.buttonText}>{translations[language].startAnalysisButton}</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity onPress={() => setCurrentStep(2)} style={styles.backButton}>
-          <Text style={styles.buttonText}>{translations[language].goBackButton}</Text>
+      
+      <View style={styles.uploadButtonsContainer}>
+        <TouchableOpacity style={styles.uploadButton} onPress={handleFaceUpload}>
+          <Text style={styles.uploadButtonText}>
+            {translations[language]?.gallery || 'Gallery'}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.uploadButton} onPress={handleFaceCamera}>
+          <Text style={styles.uploadButtonText}>
+            {translations[language]?.camera || 'Camera'}
+          </Text>
         </TouchableOpacity>
       </View>
-      <PreviousResults
-        results={previousResults}
-        translations={translations}
-        language={language}
-        currentPetImage={petImage}
-        currentFaceImage={faceImage}
-      />
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      
+      <View style={styles.navigationContainer}>
+        <TouchableOpacity 
+          style={[styles.navigationButton, styles.backButton]} 
+          onPress={() => setCurrentStep(2)}
+        >
+          <Text style={styles.navigationButtonText}>
+            {translations[language]?.back || 'Back'}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.navigationButton, styles.continueButton, !faceImage && styles.disabledButton]} 
+          onPress={() => faceImage && setCurrentStep(4)}
+          disabled={!faceImage}
+        >
+          <Text style={styles.navigationButtonText}>
+            {translations[language]?.next || 'Next'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      
+      {previousResults.length > 0 && (
+        <View style={styles.previousResultsContainer}>
+          <PreviousResults
+            results={previousResults}
+            translations={translations}
+            language={language}
+            currentPetImage={null}
+            currentFaceImage={null}
+            isProUnlocked={isProUnlocked}
+            referralCount={referralCount}
+            setCurrentStep={setCurrentStep}
+            setShowResultsPopup={setShowResultsPopup}
+            setSelectedPreviousResult={setSelectedPreviousResult}
+          />
+        </View>
+      )}
     </View>
   );
 
@@ -1511,12 +1524,14 @@ const CombinedAnalysisApp = () => {
   const renderAnalysisStep = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>{translations[language].analysisInProgressTitle}</Text>
+      
       <View style={styles.progressContainer}>
         <View style={styles.progressBarBackground}>
           <View style={[styles.progressBar, { width: `${analysisProgress}%` }]} />
         </View>
         <Text style={styles.progressText}>{analysisProgress}% Complete</Text>
       </View>
+      
       <View style={styles.analysisContainer}>
         <View style={styles.analysisItem}>
           <Text style={styles.analysisTitle}>{translations[language].faceAnalysisTitle}</Text>
@@ -1525,32 +1540,21 @@ const CombinedAnalysisApp = () => {
               alignSelf: 'center',
               width: 300,
               height: 300,
-              position: 'relative'
+              position: 'relative',
+              borderWidth: 2,
+              borderColor: '#6C63FF',
+              borderRadius: 20,
+              overflow: 'hidden',
             }]}>
-              <View style={{
-                position: 'absolute',
-                width: 300,
-                height: 300,
-                borderWidth: 3,
-                borderColor: COLORS.dark,
-                borderRadius: 20,
-                zIndex: 1
-              }} />
               <Image
                 source={{ uri: faceImage }}
                 style={{
                   width: 300,
                   height: 300,
-                  borderRadius: 20
                 }}
                 resizeMode="contain"
               />
-              {isLoading && (
-                <View style={styles.loadingOverlay}>
-                  <ActivityIndicator size="large" color={COLORS.primary} />
-                  <Text style={styles.loadingText}>{translations[language].analyzingText}</Text>
-                </View>
-              )}
+              
               {!isLoading && faceResult && faceResult[0] && faceResult[0].detection && faceResult[0].landmarks && (
                 <Svg height="300" width="300" style={styles.svgOverlay}>
                   {isLVisible && (
@@ -1581,20 +1585,26 @@ const CombinedAnalysisApp = () => {
                       />
                     </>
                   )}
+                  
+                  {/* Landmark nokta/çizgi görselleştirmelerini yenileştirelim ama sınır kutusu mantığını aynı tutalım */}
                   {faceResult[0].landmarks.map((point, index) => (
                     <Circle
                       key={`point-${index}`}
                       cx={point.x}
                       cy={point.y}
                       r="1.65"
-                      fill={COLORS.landmarkColors.default}
-                      stroke={COLORS.landmarkColors.default}
-                      strokeWidth="1"
+                      fill="#45B7D1"
+                      opacity={0.85}
                     />
                   ))}
+                  
                   {faceResult[0].landmarks.length >= 68 &&
                     connectFaceFeatures(faceResult[0].landmarks).map((line, index) => {
-                      const [p1, p2, strokeColor] = line;
+                      const [p1, p2] = line;
+                      // Çizgilere alternatif renkler verelim
+                      const alternateColors = ['#45B7D1', '#6C63FF', '#9D65F9']; 
+                      const colorIndex = index % alternateColors.length;
+                      
                       return (
                         <Line
                           key={`line-${index}`}
@@ -1602,18 +1612,30 @@ const CombinedAnalysisApp = () => {
                           y1={p1.y}
                           x2={p2.x}
                           y2={p2.y}
-                          stroke={strokeColor}
-                          strokeWidth="0.5"
+                          stroke={alternateColors[colorIndex]}
+                          strokeWidth="0.7"
+                          opacity={0.7}
                         />
                       );
                     })}
                 </Svg>
+              )}
+              
+              {/* Animasyonlu yükleme overlay'i - geliştirilmiş */}
+              {isLoading && (
+                <View style={[styles.loadingOverlay, {backgroundColor: 'rgba(0, 0, 0, 0.7)'}]}>
+                  <ActivityIndicator size="large" color="#6C63FF" />
+                  <Text style={[styles.loadingText, {color: '#fff', fontWeight: '600'}]}>
+                    {translations[language].analyzingText || "Analyzing..."}
+                  </Text>
+                </View>
               )}
             </View>
           ) : (
             <Text style={styles.errorText}>{translations[language].errorFaceImageNotAvailable}</Text>
           )}
         </View>
+        
         <View style={styles.analysisItem}>
           <Text style={styles.analysisTitle}>{translations[language].petAnalysisTitle}</Text>
           {petImage ? (
@@ -1621,26 +1643,21 @@ const CombinedAnalysisApp = () => {
               alignSelf: 'center',
               width: 300,
               height: 300,
-              position: 'relative'
+              position: 'relative',
+              borderWidth: 2,
+              borderColor: '#4ECDC4', // Farklı renk kullanarak çeşitlilik kattık
+              borderRadius: 20,
+              overflow: 'hidden'
             }]}>
-              <View style={{
-                position: 'absolute',
-                width: 300,
-                height: 300,
-                borderWidth: 3,
-                borderColor: COLORS.dark,
-                borderRadius: 20,
-                zIndex: 1
-              }} />
               <Image
                 source={{ uri: petImage }}
                 style={{
                   width: 300,
                   height: 300,
-                  borderRadius: 20
                 }}
                 resizeMode="contain"
               />
+              
               {petResult && petResult.detection && petResult.detection.box && (
                 <View
                   style={{
@@ -1650,8 +1667,28 @@ const CombinedAnalysisApp = () => {
                     width: petResult.detection.box.width,
                     height: petResult.detection.box.height,
                     borderWidth: 2,
-                    borderColor: COLORS.danger,
+                    borderColor: '#4ECDC4',
+                    borderStyle: 'dashed',
+                    borderRadius: 2,
                     zIndex: 2
+                  }}
+                />
+              )}
+              
+              {/* Pulse animasyon efekti - eğlence faktörü */}
+              {petResult && petResult.detection && petResult.detection.box && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    left: petResult.detection.box.x - 5,
+                    top: petResult.detection.box.y - 5,
+                    width: petResult.detection.box.width + 10,
+                    height: petResult.detection.box.height + 10,
+                    borderWidth: 1,
+                    borderColor: '#4ECDC4',
+                    borderRadius: 3,
+                    opacity: isLVisible ? 0.7 : 0.3, // Yanıp sönen efekt
+                    zIndex: 1
                   }}
                 />
               )}
@@ -1660,6 +1697,22 @@ const CombinedAnalysisApp = () => {
             <Text style={styles.errorText}>{translations[language].errorPetImageNotAvailable}</Text>
           )}
         </View>
+      </View>
+      
+      {/* Analiz ipuçları */}
+      <View style={{
+        backgroundColor: 'rgba(108, 99, 255, 0.15)',
+        borderRadius: 10,
+        padding: 15,
+        marginTop: 10
+      }}>
+        <Text style={{
+          color: '#fff',
+          textAlign: 'center',
+          fontSize: 14
+        }}>
+          {translations[language].aiAnalysisHint || "Our AI is analyzing facial features and pet characteristics to determine your compatibility..."}
+        </Text>
       </View>
     </View>
   );
@@ -2126,7 +2179,7 @@ const CombinedAnalysisApp = () => {
           {currentStep === 6 && renderResultsStep()}
         </View>
       </ScrollView>
-      {currentStep !== 0 && <BannerAdComponent adUnitId={bannerAdUnitId} />}
+    {/* {currentStep !== 0 && <BannerAdComponent adUnitId={bannerAdUnitId} />} */}
       <ResultsPopup {...popupProps} />
       <CustomModal/>
     </SafeAreaView>

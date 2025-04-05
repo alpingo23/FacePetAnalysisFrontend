@@ -82,88 +82,96 @@ const QuestionsStep = ({
       container: {
         flex: 1,
         backgroundColor: '#000',
-        width: screenDimensions.width, // Use full screen width
+        width: screenDimensions.width,
       },
       header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: '4%',
-        paddingTop: '2%',
-        paddingBottom: '2%',
-        height: screenDimensions.height * 0.08, // Ekran yüksekliğine göre oransal
-        backgroundColor: '#1A1A1A',
-        width: '100%', // Ensure header uses full width
+        paddingHorizontal: '5%',
+        paddingTop: '3%',
+        paddingBottom: '3%',
+        height: screenDimensions.height * 0.08,
+        backgroundColor: '#111',
+        width: '100%',
+        borderBottomWidth: 1,
+        borderBottomColor: '#222',
       },
       backButton: {
-        width: screenDimensions.width * 0.09, // Ekran genişliğine göre oransal
-        height: screenDimensions.width * 0.09, // Kare tuş için aynı değer
-        borderRadius: screenDimensions.width * 0.045, // Yarıçap (yuvarlak için)
-        backgroundColor: '#333',
+        width: screenDimensions.width * 0.09,
+        height: screenDimensions.width * 0.09,
+        borderRadius: screenDimensions.width * 0.045,
+        backgroundColor: '#222',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: '4%',
       },
       backIcon: {
-        fontSize: screenDimensions.width * 0.07, // Ekran genişliğine göre oransal font
+        fontSize: screenDimensions.width * 0.06,
         fontWeight: 'bold',
         color: '#FFF',
         textAlign: 'center',
-        lineHeight: screenDimensions.width * 0.09, // Buton yüksekliğiyle aynı
-        marginTop: screenDimensions.width * -0.025, // Oransal negatif margin
+        lineHeight: screenDimensions.width * 0.09,
+        marginTop: screenDimensions.width * -0.02,
       },
       progressBar: {
         flex: 1,
-        height: 4,
+        height: 6,
         backgroundColor: '#333',
-        borderRadius: 2,
+        borderRadius: 3,
       },
       progressFill: {
         height: '100%',
         backgroundColor: COLORS.primary,
-        borderRadius: 2,
+        borderRadius: 3,
       },
       scrollView: {
         flex: 1,
-        width: '100%', // Ensure scrollView uses full width
+        width: '100%',
       },
       contentContainer: {
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: Math.max(20, screenDimensions.height * 0.05), // Oransal padding
-        minHeight: screenDimensions.height - (screenDimensions.height * 0.15), // Oransal yükseklik
-        width: '100%', // Ensure content uses full width
+        paddingHorizontal: 25,
+        paddingTop: 30,
+        paddingBottom: Math.max(30, screenDimensions.height * 0.05),
+        minHeight: screenDimensions.height - (screenDimensions.height * 0.15),
+        width: '100%',
       },
       title: {
-        fontSize: screenDimensions.width * 0.07, // Ekran genişliğine göre oransal
+        fontSize: Math.min(24, screenDimensions.width * 0.06),
         fontWeight: 'bold',
         color: '#FFF',
-        marginBottom: screenDimensions.height * 0.015,
+        marginBottom: screenDimensions.height * 0.02,
+        fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-medium',
       },
       subtitle: {
-        fontSize: screenDimensions.width * 0.035, // Ekran genişliğine göre oransal
+        fontSize: Math.min(16, screenDimensions.width * 0.035),
         color: '#AAA',
-        marginBottom: screenDimensions.height * 0.035,
+        marginBottom: screenDimensions.height * 0.04,
+        lineHeight: 22,
+        fontFamily: Platform.OS === 'ios' ? 'Avenir' : 'sans-serif',
       },
       optionContainer: {
         marginBottom: 15,
-        width: '100%', // Make option container full width
+        width: '100%',
       },
       option: {
         backgroundColor: '#1A1A1A',
-        borderRadius: screenDimensions.width * 0.04, // Ekran genişliğine göre oransal
-        padding: screenDimensions.width * 0.04, // Ekran genişliğine göre oransal
-        marginBottom: screenDimensions.height * 0.025, // Ekran yüksekliğine göre oransal
+        borderRadius: 20, // More rounded for modern look
+        padding: screenDimensions.width * 0.045,
+        marginBottom: screenDimensions.height * 0.025,
         flexDirection: 'row',
         alignItems: 'center',
-        width: '100%', // Make each option full width
+        width: '100%',
+        borderWidth: 1,
+        borderColor: '#2A2A2A',
       },
       optionSelected: {
         backgroundColor: COLORS.primary,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
       },
       optionIcon: {
-        width: screenDimensions.width * 0.12, // Ekran genişliğine göre oransal
-        height: screenDimensions.width * 0.12, // Kare olması için aynı değer
-        borderRadius: screenDimensions.width * 0.06, // Yarıçap (yuvarlak için)
+        width: screenDimensions.width * 0.12,
+        height: screenDimensions.width * 0.12,
+        borderRadius: screenDimensions.width * 0.06,
         backgroundColor: '#333',
         justifyContent: 'center',
         alignItems: 'center',
@@ -280,48 +288,51 @@ const QuestionsStep = ({
         flex: 1,
       },
       optionTitle: {
-        fontSize: screenDimensions.width * 0.045, // Ekran genişliğine göre oransal
+        fontSize: Math.min(18, screenDimensions.width * 0.045),
         fontWeight: 'bold',
         color: '#FFF',
         marginBottom: screenDimensions.height * 0.008,
+        fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-medium',
       },
       optionDescription: {
-        fontSize: screenDimensions.width * 0.035, // Ekran genişliğine göre oransal
+        fontSize: Math.min(15, screenDimensions.width * 0.035),
         color: '#CCC',
+        fontFamily: Platform.OS === 'ios' ? 'Avenir' : 'sans-serif',
       },
       selectedText: {
         color: '#FFFFFF',
       },
       nextButtonContainer: {
         paddingHorizontal: '5%',
-        paddingVertical: screenDimensions.height * 0.07,
-        borderTopWidth: 0,
-        borderTopColor: '#333',
-        width: '100%', // Make button container full width
-        // Ekranın alt kısmında sabitler (banner'ın üstünde)
+        paddingVertical: screenDimensions.height * 0.03,
+        width: '100%',
         position: 'absolute',
         bottom: 10,
-        backgroundColor: '#000', // Arka plan rengi
+        backgroundColor: 'rgba(0, 0, 0, 0.7)', // Semi-transparent for blur effect
+        backdropFilter: 'blur(10px)',
+        borderTopWidth: 1,
+        borderTopColor: '#222',
       },
       nextButton: {
-        backgroundColor: COLORS.primary, // Varsayılan renk
-        height: screenDimensions.height * 0.07, // Ekran yüksekliğine göre oransal
-        borderRadius: screenDimensions.height * 0.035, // Yuvarlatılmış kenarlar
+        backgroundColor: COLORS.primary,
+        height: screenDimensions.height * 0.07,
+        borderRadius: 25, // More rounded for modern look
         justifyContent: 'center',
         alignItems: 'center',
-        width: '100%', // Make button full width
+        width: '100%',
         ...SHADOWS.medium,
       },
       nextButtonDisabled: {
         backgroundColor: '#444',
       },
       nextButtonGreen: {
-        backgroundColor: COLORS.success, // Yeşil renk (son soruda bir şık seçildiğinde)
+        backgroundColor: COLORS.success,
       },
       nextButtonText: {
         color: '#FFFFFF',
-        fontSize: screenDimensions.width * 0.04, // Ekran genişliğine göre oransal
+        fontSize: Math.min(18, screenDimensions.width * 0.04),
         fontWeight: 'bold',
+        fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-medium',
       },
     });
 

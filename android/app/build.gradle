@@ -1,34 +1,47 @@
-project.ext.react = [
-    enableHermes: false  
-]
-
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 apply plugin: 'com.google.gms.google-services'
 
+// .env dosyasını oku
+def envFile = file('../../.env')
+def envProperties = new Properties()
+if (envFile.exists()) {
+    envFile.withInputStream { stream ->
+        envProperties.load(stream)
+    }
+}
+
+// .env dosyasından değişkenleri al
+def MYAPP_RELEASE_STORE_FILE = envProperties.getProperty('MYAPP_RELEASE_STORE_FILE', 'Untitled.jks')
+def MYAPP_RELEASE_KEY_ALIAS = envProperties.getProperty('MYAPP_RELEASE_KEY_ALIAS', 'key0')
+def MYAPP_RELEASE_STORE_PASSWORD = envProperties.getProperty('MYAPP_RELEASE_STORE_PASSWORD', 'default_password')
+def MYAPP_RELEASE_KEY_PASSWORD = envProperties.getProperty('MYAPP_RELEASE_KEY_PASSWORD', 'default_password')
+
 react {
     autolinkLibrariesWithApp()
-
 }
 
 def enableProguardInReleaseBuilds = false
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
-
 android {
     ndkVersion rootProject.ext.ndkVersion
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "com.alpipekciler.petfacematch"
+
+
     defaultConfig {
         applicationId "com.alpipekciler.petfacematch"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
-        versionName "1.1"
+        versionName "1.0"
+        buildConfigField "boolean", "HERMES_ENABLED", "false"
     }
+
     signingConfigs {
         debug {
             storeFile file("C:/Users/alpip/.android/debug.keystore")
@@ -37,10 +50,10 @@ android {
             keyPassword 'android'
         }
         release {
-            storeFile file('/Users/alpipekciler/Desktop/FacePetAnalysisProject/FacePetAnalysis/keystore/Untitled.jks')
-            storePassword 'Hjk4tie2x2?'
-            keyAlias 'key0' 
-            keyPassword 'Hjk4tie2x2' 
+            storeFile file(MYAPP_RELEASE_STORE_FILE)
+            storePassword MYAPP_RELEASE_STORE_PASSWORD
+            keyAlias MYAPP_RELEASE_KEY_ALIAS
+            keyPassword MYAPP_RELEASE_KEY_PASSWORD
         }
     }
     buildTypes {
@@ -56,7 +69,6 @@ android {
     
     packagingOptions {
         pickFirst '**/libc++_shared.so'
-
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/LICENSE'
         exclude 'META-INF/LICENSE.txt'
@@ -66,14 +78,26 @@ android {
         exclude 'META-INF/notice.txt'
         exclude 'META-INF/*.kotlin_module'
     }
+    
+    // Add this section to resolve the ambiguous task issue
+    variantFilter { variant ->
+        def names = variant.flavors*.name
+        // To prioritize "play" flavor when using generic installDebug task
+        if (names.contains("amazon") && gradle.startParameter.taskNames.contains("installDebug")) {
+            variant.setIgnore(true)
+        }
+    }
 }
+
+// Add this custom task to provide a clear default install task
+
 
 dependencies {
     implementation("com.facebook.react:react-android")
-
     implementation jscFlavor
     implementation 'com.google.android.gms:play-services-ads:24.0.0'
     implementation 'com.google.android.gms:play-services-auth:21.3.0'
     implementation 'com.google.firebase:firebase-auth:22.3.1'
-    implementation 'com.google.firebase:firebase-core:21.1.1' 
+    implementation 'com.google.firebase:firebase-core:21.1.1'
+    implementation project(':react-native-vector-icons')
 }

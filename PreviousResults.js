@@ -280,8 +280,8 @@ const PreviousResults = ({
           onClose={() => setLocalShowResultsPopup(false)}
           compatibilityScore={selectedResult.compatibilityScore}
           details={selectedResult.details || []}
-          petImage={currentPetImage}
-          faceImage={currentFaceImage}
+          petImage={null}
+          faceImage={null}
           petImageUrl={selectedResult.petImageUrl}
           faceImageUrl={selectedResult.faceImageUrl}
           petBreed={selectedResult.petBreed}
